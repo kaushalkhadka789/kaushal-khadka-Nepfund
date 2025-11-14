@@ -64,8 +64,8 @@ npm install
 3. Create a `.env` file in the backend folder:
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://lordqshal_db_user:0Et9DAvWt6kHTGJ9@cluster0.crf46gj.mongodb.net/nepfund
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+
+
 JWT_EXPIRE=7d
 KHALTI_SECRET_KEY=your_khalti_secret_key
 KHALTI_PUBLIC_KEY=your_khalti_public_key
@@ -189,10 +189,8 @@ Fund/
 
 The platform supports integration with:
 - **Khalti** - Nepal's popular payment gateway
-- **eSewa** - Another popular Nepali payment gateway
-- **Stripe** - For international donations
 
-Payment integration functions are in `backend/utils/payment.js`. You'll need to implement the actual API calls based on each gateway's documentation.
+
 
 ## Security Features
 
@@ -217,5 +215,5 @@ ISC
 
 ## Author
 
-NepFund Development Team
+NepFund Development
 
