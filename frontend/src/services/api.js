@@ -43,6 +43,27 @@ export const authApi = apiSlice.injectEndpoints({
         body: credentials,
       }),
     }),
+    forgotPassword: builder.mutation({
+      query: (body) => ({
+        url: '/auth/forgot-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+    verifyResetOtp: builder.mutation({
+      query: (body) => ({
+        url: '/auth/verify-reset-otp',
+        method: 'POST',
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (body) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body,
+      }),
+    }),
     getMe: builder.query({
       query: () => '/auth/me',
       providesTags: ['User'],
@@ -207,6 +228,13 @@ export const adminApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+    toggleUserStatus: builder.mutation({
+      query: (id) => ({
+        url: `/admin/users/${id}/status`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -243,6 +271,9 @@ export const userApi = apiSlice.injectEndpoints({
 export const {
   useRegisterMutation,
   useLoginMutation,
+  useForgotPasswordMutation,
+  useVerifyResetOtpMutation,
+  useResetPasswordMutation,
   useGetMeQuery,
 } = authApi;
 
@@ -274,6 +305,7 @@ export const {
   useMarkSuccessStoryMutation,
   useGetAllUsersQuery,
   useUpdateUserRoleMutation,
+  useToggleUserStatusMutation,
   useDeleteUserMutation,
 } = adminApi;
 

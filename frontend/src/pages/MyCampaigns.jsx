@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { ensureSocketConnected } from '../services/socket';
 import { FiEdit, FiTrash2, FiEye, FiClock } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 
 const MyCampaigns = () => {
   const { data, isLoading, refetch } = useGetMyCampaignsQuery();
@@ -25,12 +26,14 @@ const MyCampaigns = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+        <p className="mt-4 text-gray-600">Loading your campaigns...</p>
       </div>
     );
   }
 
+  // NOTE: Logic preserved - filtering out rejected campaigns
   const campaigns = (data?.data || []).filter((c) => c.status !== 'rejected');
 
   const getStatusColor = (status) => {
@@ -49,87 +52,121 @@ const MyCampaigns = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-8">My Campaigns</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50/50 min-h-screen">
+      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-10">
+        My Campaigns
+      </h1>
 
       {campaigns.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">You haven't created any campaigns yet.</p>
+        <div className="text-center py-20 bg-white rounded-xl shadow-lg border border-gray-100">
+          <p className="text-gray-500 text-lg mb-6">You haven't created any campaigns yet. Start your mission now!</p>
           <Link
             to="/create-campaign"
-            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            className="inline-flex items-center px-8 py-3 bg-primary-600 text-white rounded-full font-semibold shadow-lg hover:bg-primary-700 transition transform hover:scale-[1.02]"
           >
             Create Your First Campaign
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {campaigns.map((campaign) => {
-            const progress = ((campaign.raisedAmount / campaign.goalAmount) * 100).toFixed(1);
+            const progress = ((campaign.raisedAmount / campaign.goalAmount) * 100);
             const daysLeft = Math.ceil((new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+            const isEnded = daysLeft <= 0 || progress >= 100;
+            const canEdit = campaign.status !== 'completed' && campaign.status !== 'rejected';
 
             return (
-              <div key={campaign._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                {campaign.images && campaign.images.length > 0 && (
-                  <img
-                    src={`http://localhost:5000/${campaign.images[0]}`}
-                    alt={campaign.title}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`px-2 py-1 text-xs rounded ${getStatusColor(campaign.status)}`}>
-                      {campaign.status}
-                    </span>
-                    <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded">
+              <motion.div
+                key={campaign._id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
+              >
+                {/* Image Header - Fixed height h-44 for rectangular card */}
+                <div className="relative w-full h-44 overflow-hidden">
+                  {campaign.images && campaign.images.length > 0 ? (
+                    <img
+                      src={`http://localhost:5000/${campaign.images[0]}`}
+                      alt={campaign.title}
+                      className="w-full h-full object-cover transition-transform duration-500"
+                    />
+                  ) : (
+                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-medium">No Image</div>
+                  )}
+                  
+                  {/* Category Badge - Top Left */}
+                  <div className="absolute top-3 left-3">
+                    <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-semibold rounded-full shadow-sm">
                       {campaign.category}
                     </span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+
+                  {/* Status Badge - Top Right */}
+                  <div className="absolute top-3 right-3">
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusColor(campaign.status)}`}>
+                      {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Content Body - p-4 for consistency */}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-2">
                     {campaign.title}
                   </h3>
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Progress</span>
-                      <span className="font-semibold">{progress}%</span>
+                  
+                  {/* Progress Section */}
+                  <div className="my-3 flex-none">
+                    <div className="flex justify-between text-xs mb-1 font-medium">
+                      <span className="text-gray-500">Progress</span>
+                      <span className="font-semibold text-primary-700">{Math.min(progress, 100).toFixed(0)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-primary-600 h-2 rounded-full"
+                        className="bg-primary-600 h-full rounded-full transition-all duration-1000"
                         style={{ width: `${Math.min(progress, 100)}%` }}
                       ></div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      रु {campaign.raisedAmount?.toLocaleString()} / रु {campaign.goalAmount?.toLocaleString()}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Raised: <span className="font-semibold text-gray-800">रु {campaign.raisedAmount?.toLocaleString()}</span> / Goal: <span className="font-semibold text-gray-800">रु {campaign.goalAmount?.toLocaleString()}</span>
                     </p>
                   </div>
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                    <div className="flex items-center space-x-1">
-                      <FiClock className="w-4 h-4" />
-                      <span>{daysLeft > 0 ? `${daysLeft} days left` : 'Ended'}</span>
-                    </div>
+
+                  {/* Days Left */}
+                  <div className="flex items-center text-sm text-gray-600 mt-auto pt-3 border-t border-gray-100">
+                    <FiClock className="w-4 h-4 mr-2 text-gray-400" />
+                    <span className="font-medium">{isEnded ? 'Campaign Ended' : `${daysLeft} days left`}</span>
                   </div>
-                  <div className="flex space-x-2">
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 mt-4">
                     <Link
                       to={`/campaign/${campaign._id}`}
-                      className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                      className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
                     >
                       <FiEye className="w-4 h-4" />
-                      <span>View</span>
+                      <span>View Campaign</span>
                     </Link>
-                    {campaign.status !== 'completed' && campaign.status !== 'rejected' && (
+                    {canEdit && (
                       <Link
                         to={`/edit-campaign/${campaign._id}`}
-                        className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                        className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
                       >
                         <FiEdit className="w-4 h-4" />
-                        <span>Edit</span>
+                        <span>Edit Details</span>
                       </Link>
                     )}
+                    {/* Trash icon maintained for future logic if delete functionality is added */}
+                    {/* {!canEdit && (
+                        <button disabled className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-red-100 text-red-400 rounded-lg cursor-not-allowed">
+                            <FiTrash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                        </button>
+                    )} */}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -139,4 +176,3 @@ const MyCampaigns = () => {
 };
 
 export default MyCampaigns;
-

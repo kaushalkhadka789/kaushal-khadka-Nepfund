@@ -1,6 +1,13 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getMe } from '../controllers/auth.controller.js';
+import {
+  register,
+  login,
+  getMe,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
+} from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -20,6 +27,23 @@ const loginValidation = [
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
+router.post('/forgot-password', body('email').isEmail().withMessage('Please provide a valid email'), forgotPassword);
+router.post(
+  '/verify-reset-otp',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+    body('otp').isLength({ min: 4 }).withMessage('OTP is required'),
+  ],
+  verifyResetOtp
+);
+router.post(
+  '/reset-password',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  resetPassword
+);
 
 export default router;
 

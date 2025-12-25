@@ -200,10 +200,20 @@ export const createCampaign = async (req, res) => {
       imageUrl: images[0] || ''
     });
 
-    // Add campaign to user's campaignsCreated
-    await User.findByIdAndUpdate(req.user.id, {
-      $push: { campaignsCreated: campaign._id }
-    });
+    // Add campaign to user's campaignsCreated and update role to 'creator' if they're still a 'visitor'
+    const user = await User.findById(req.user.id);
+    
+    // If user is a visitor, promote them to creator when they submit their first campaign
+    if (user.role === 'visitor') {
+      await User.findByIdAndUpdate(req.user.id, {
+        $push: { campaignsCreated: campaign._id },
+        $set: { role: 'creator' }
+      });
+    } else {
+      await User.findByIdAndUpdate(req.user.id, {
+        $push: { campaignsCreated: campaign._id }
+      });
+    }
 
     // Notify admins in real-time about new campaign
     try {

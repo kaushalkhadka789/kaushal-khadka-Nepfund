@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.middleware.js';
-import { initiateKhaltiPayment, verifyKhaltiPayment } from '../utils/payment.js';
+import { initiateKhaltiPayment, verifyKhaltiPayment, initiateEsewaPayment, verifyEsewaPayment } from '../utils/payment.js';
 import User from '../models/User.model.js';
 
 const router = express.Router();
@@ -69,6 +69,77 @@ router.post('/khalti/verify', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Payment verification failed'
+    });
+  }
+});
+
+// Initiate eSewa payment
+router.post('/esewa/initiate', protect, async (req, res) => {
+  try {
+    const { amount, campaignId } = req.body;
+    
+    if (!amount || !campaignId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount and campaign ID are required'
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    const paymentData = await initiateEsewaPayment(
+      parseFloat(amount),
+      campaignId,
+      req.user.id,
+      user.name
+    );
+
+    res.status(200).json({
+      success: true,
+      data: paymentData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Verify eSewa payment
+router.post('/esewa/verify', protect, async (req, res) => {
+  try {
+    const { oid, refId, amount } = req.body;
+    
+    if (!oid || !refId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order ID, Reference ID, and Amount are required'
+      });
+    }
+
+    const verification = await verifyEsewaPayment(oid, refId, amount);
+
+    // Check if payment is completed
+    const status = verification?.status || verification?.state;
+    const isCompleted = status === 'Completed' || status === 'completed' || status === 'COMPLETED';
+
+    if (!isCompleted) {
+      return res.status(200).json({
+        success: false,
+        message: `Payment status: ${status}. Payment is not completed.`,
+        data: verification
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: verification
+    });
+  } catch (error) {
+    console.error('eSewa payment verification error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Payment verification failed'

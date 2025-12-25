@@ -10,6 +10,7 @@ import {
   getDashboardStats,
   getAllUsers,
   updateUserRole,
+  toggleUserStatus,
   deleteUser,
   deleteCampaignByAdmin,
   markCampaignAsSuccessStory
@@ -60,6 +61,7 @@ router.put('/campaigns/:id/success-story', successStoryUpload.array('images', 5)
 router.delete('/campaigns/:id', deleteCampaignByAdmin);
 router.get('/users', getAllUsers);
 router.put('/users/:id/role', updateUserRole);
+router.put('/users/:id/status', toggleUserStatus);
 router.delete('/users/:id', deleteUser);
 
 export default router;

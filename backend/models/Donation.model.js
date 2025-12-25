@@ -18,7 +18,7 @@ const donationSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['khalti'],
+    enum: ['khalti', 'esewa'],
     required: true
   },
   paymentId: {

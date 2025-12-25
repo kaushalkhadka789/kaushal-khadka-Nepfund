@@ -8,10 +8,11 @@ dotenv.config();
 const makeUserAdmin = async (email) => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(
-      process.env.MONGODB_URI || 
-      'mongodb+srv://lordqshal_db_user:0Et9DAvWt6kHTGJ9@cluster0.crf46gj.mongodb.net/nepfund'
-    );
+    if (!process.env.MONGODB_URI) {
+      console.error('Error: MONGODB_URI environment variable is not set');
+      process.exit(1);
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     
     console.log('MongoDB connected successfully');
 

@@ -1,23 +1,42 @@
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter object using SMTP transport
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || 'kaushalkhadka789@gmail.com',
-    pass: process.env.SMTP_PASSWORD || 'iwej uyol qvzr szmu',
-  },
-});
+// Lazy-loaded transporter - only created when needed
+let transporter = null;
 
-// Verify transporter configuration (only log errors)
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('SMTP configuration error:', error);
+/**
+ * Get or create the SMTP transporter
+ * @returns {Object} Nodemailer transporter
+ * @throws {Error} If SMTP credentials are not configured
+ */
+const getTransporter = () => {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    throw new Error('SMTP_USER and SMTP_PASSWORD environment variables are required for sending emails');
   }
-  // Success is silent - no need to log on every server restart
-});
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    // Verify transporter configuration asynchronously (non-blocking)
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('SMTP configuration error:', error.message);
+        console.error('Please check your SMTP_USER and SMTP_PASSWORD environment variables');
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('✓ SMTP transporter verified successfully');
+      }
+    });
+  }
+
+  return transporter;
+};
 
 /**
  * Send welcome email to newly registered user
@@ -153,7 +172,7 @@ export const sendWelcomeEmail = async (email, name) => {
 
     // Email options
     const mailOptions = {
-      from: `"NepFund" <${process.env.SMTP_USER || 'kaushalkhadka789@gmail.com'}>`,
+      from: `"NepFund" <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Welcome to NepFund!',
       text: textContent,
@@ -161,7 +180,7 @@ export const sendWelcomeEmail = async (email, name) => {
     };
 
     // Send email
-    const info = await transporter.sendMail(mailOptions);
+    const info = await getTransporter().sendMail(mailOptions);
     // Email sent successfully (logged only in development for debugging)
     if (process.env.NODE_ENV === 'development') {
       console.log('✓ Welcome email sent to:', email);
@@ -188,14 +207,14 @@ export const sendWelcomeEmail = async (email, name) => {
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {
     const mailOptions = {
-      from: `"NepFund" <${process.env.SMTP_USER || 'kaushalkhadka789@gmail.com'}>`,
+      from: `"NepFund" <${process.env.SMTP_USER}>`,
       to,
       subject,
       text: text || '',
       html: html || '',
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await getTransporter().sendMail(mailOptions);
     // Email sent successfully (logged only in development for debugging)
     if (process.env.NODE_ENV === 'development') {
       console.log('✓ Email sent to:', to);

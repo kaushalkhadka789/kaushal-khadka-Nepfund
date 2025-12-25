@@ -63,21 +63,36 @@ npm install
 
 3. Create a `.env` file in the backend folder:
 ```env
+# Server Configuration
 PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
 
+# Database Configuration (REQUIRED)
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 
+# JWT Configuration (REQUIRED)
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRE=7d
+
+# SMTP Email Configuration (REQUIRED)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_specific_password
+
+# Payment Gateway Configuration
 KHALTI_SECRET_KEY=your_khalti_secret_key
 KHALTI_PUBLIC_KEY=your_khalti_public_key
 ESEWA_MERCHANT_ID=your_esewa_merchant_id
+ESEWA_SECRET_KEY=your_esewa_secret_key
+ESEWA_PAYMENT_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form
 STRIPE_SECRET_KEY=your_stripe_secret_key
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_email_password
-NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
+STRIPE_PUBLIC_KEY=your_stripe_public_key
 ```
+
+**⚠️ IMPORTANT:** Never commit your `.env` file to version control. All sensitive credentials must be stored in environment variables.
 
 4. Create upload directories (if they don't exist):
 ```bash

@@ -58,6 +58,48 @@ const DonateModal = ({ campaign, onClose }) => {
         toast.error(error.response?.data?.message || 'Payment initialization failed');
         setIsProcessing(false);
       }
+    } else if (paymentMethod === 'esewa') {
+      // Handle eSewa payment
+      try {
+        setIsProcessing(true);
+        const response = await axios.post(
+          '/api/payment/esewa/initiate',
+          {
+            amount: parseFloat(amount),
+            campaignId: campaign._id,
+          },
+          {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success && response.data.data.payment_data) {
+          // Create and submit form to eSewa
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = response.data.data.payment_url;
+          
+          const paymentData = response.data.data.payment_data;
+          Object.keys(paymentData).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = paymentData[key];
+            form.appendChild(input);
+          });
+          
+          document.body.appendChild(form);
+          form.submit();
+        } else {
+          toast.error('Failed to initialize payment');
+          setIsProcessing(false);
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Payment initialization failed');
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -115,12 +157,14 @@ const DonateModal = ({ campaign, onClose }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Payment Method
             </label>
-            <input
-              type="text"
-              value="Khalti"
-              disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
-            />
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="khalti">Khalti</option>
+              <option value="esewa">eSewa</option>
+            </select>
           </div>
 
           <div className="mb-4">
@@ -166,6 +210,11 @@ const DonateModal = ({ campaign, onClose }) => {
           {paymentMethod === 'khalti' && (
             <p className="text-xs text-gray-500 mt-2 text-center">
               You will be redirected to Khalti payment gateway
+            </p>
+          )}
+          {paymentMethod === 'esewa' && (
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              You will be redirected to eSewa payment gateway
             </p>
           )}
         </form>

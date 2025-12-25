@@ -35,8 +35,13 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    enum: ['visitor', 'creator', 'admin'],
+    default: 'visitor'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'frozen'],
+    default: 'active'
   },
   avatar: {
     type: String,
@@ -66,6 +71,16 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0
+  },
+  
+  // OTP-based password reset fields (do not affect normal login/registration)
+  otp: {
+    type: String,
+    select: false,
+  },
+  otpExpires: {
+    type: Date,
+    select: false,
   }
 }, {
   timestamps: true
@@ -96,7 +111,10 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
 
 // Generate JWT token
 userSchema.methods.getSignedJwtToken = function() {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };

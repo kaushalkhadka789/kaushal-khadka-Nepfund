@@ -46,8 +46,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database connection
+if (!process.env.MONGODB_URI) {
+  console.error('Error: MONGODB_URI environment variable is not set');
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb+srv://lordqshal_db_user:0Et9DAvWt6kHTGJ9@cluster0.crf46gj.mongodb.net/nepfund')
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected successfully'))
   .catch((error) => console.error('MongoDB connection error:', error));
 

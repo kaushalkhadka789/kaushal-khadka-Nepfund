@@ -17,7 +17,13 @@ export const protect = async (req, res, next) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production');
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({
+          success: false,
+          message: 'Server configuration error: JWT_SECRET not set'
+        });
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       req.user = await User.findById(decoded.id).select('-password');
       
@@ -25,6 +31,14 @@ export const protect = async (req, res, next) => {
         return res.status(401).json({
           success: false,
           message: 'User not found'
+        });
+      }
+
+      // Check if account is frozen
+      if (req.user.status === 'frozen') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account has been frozen. Please contact administrator.'
         });
       }
 

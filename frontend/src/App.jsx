@@ -9,12 +9,14 @@ import ProtectedRoute from './utils/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import CampaignDetails from './pages/CampaignDetails';
 import CreateCampaign from './pages/CreateCampaign';
 import EditCampaign from './pages/EditCampaign';
 import MyCampaigns from './pages/MyCampaigns';
 import MyDonations from './pages/MyDonations';
 import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Layout from './components/Layout';
@@ -59,6 +61,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/campaign/:id" element={<CampaignDetails />} />
         <Route path="/campaigns" element={<Campaigns />} />
         <Route path="/urgent-campaigns" element={<UrgentCampaigns />} />
@@ -100,6 +103,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/editprofile"
+          element={
+            <ProtectedRoute>
+              <EditProfile />
             </ProtectedRoute>
           }
         />

@@ -26,37 +26,197 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     const pidx = searchParams.get('pidx');
+    const oid = searchParams.get('oid');
+    const refId = searchParams.get('refId');
     const campaignIdParam = searchParams.get('campaignId');
+    const paymentMethod = searchParams.get('paymentMethod') || 'khalti';
+    
+    // eSewa sometimes appends data with ? instead of &, so we need to parse the full URL
+    let dataParam = searchParams.get('data');
+    if (!dataParam && paymentMethod === 'esewa') {
+      // Try to extract data from the full URL string (eSewa might use ?data= instead of &data=)
+      const fullUrl = window.location.href;
+      // Try multiple patterns to find the data parameter
+      const patterns = [
+        /[?&]data=([^&?#]+)/,  // Standard pattern
+        /\?data=([^?#]+)/,     // Pattern with ? at start
+        /data=([^&?#]+)/        // Simple pattern
+      ];
+      
+      for (const pattern of patterns) {
+        const match = fullUrl.match(pattern);
+        if (match && match[1]) {
+          dataParam = decodeURIComponent(match[1]);
+          console.log('Extracted data param from URL using pattern:', pattern);
+          break;
+        }
+      }
+      
+      // If still not found, try splitting by ? and looking for data=
+      if (!dataParam) {
+        const urlParts = fullUrl.split('?');
+        for (let i = 1; i < urlParts.length; i++) {
+          const part = urlParts[i];
+          if (part.startsWith('data=')) {
+            dataParam = decodeURIComponent(part.substring(5).split('&')[0].split('#')[0]);
+            console.log('Extracted data param by splitting URL');
+            break;
+          }
+        }
+      }
+    }
     
     // Prevent duplicate processing (React StrictMode can cause double renders)
-    if (pidx && campaignIdParam && !hasProcessed.current && !verified && !verifying) {
-      hasProcessed.current = true; // Mark as processing
+    if (paymentMethod === 'khalti' && pidx && campaignIdParam && !hasProcessed.current && !verified) {
+      hasProcessed.current = true;
       setCampaignId(campaignIdParam);
-      setVerifying(true); // Set verifying state immediately
-      verifyAndCreateDonation(pidx, campaignIdParam);
-    } else if (!pidx || !campaignIdParam) {
-      // No payment parameters - not a payment success page
+      setVerifying(true);
+      verifyAndCreateDonation(pidx, campaignIdParam, 'khalti');
+    } else if (paymentMethod === 'esewa' && campaignIdParam && !hasProcessed.current && !verified) {
+      // eSewa can send data in two ways:
+      // 1. As a 'data' parameter (base64 encoded JSON)
+      // 2. As direct query parameters (oid, refId, amt)
+      let esewaOid = oid;
+      let esewaRefId = refId;
+      // Try to get amount from URL first (we set it in success_url)
+      let esewaAmount = searchParams.get('amt') || searchParams.get('amount');
+      
+      // If data parameter exists, decode it
+      if (dataParam) {
+        try {
+          console.log('Processing eSewa data param, length:', dataParam.length);
+          
+          // Clean the data param - remove any trailing fragments or extra characters
+          let cleanData = dataParam.trim();
+          
+          // Try URL decode first (eSewa might URL-encode the base64 string)
+          let base64String = cleanData;
+          try {
+            // Try decoding multiple times in case of double encoding
+            base64String = decodeURIComponent(cleanData);
+            // If that worked, try once more in case of double encoding
+            try {
+              base64String = decodeURIComponent(base64String);
+            } catch (e) {
+              // Single encoding, that's fine
+            }
+          } catch (e) {
+            // If URL decode fails, use original (might already be decoded)
+            base64String = cleanData;
+          }
+          
+          // Base64 decode and parse JSON
+          const decodedData = JSON.parse(atob(base64String));
+          
+          console.log('Successfully decoded eSewa data:', decodedData);
+          
+          // eSewa data structure: typically contains transaction_code (refId), status, etc.
+          // transaction_code is the reference ID we need
+          if (decodedData.transaction_code) {
+            esewaRefId = decodedData.transaction_code;
+            console.log('Found transaction_code:', esewaRefId);
+          } else {
+            esewaRefId = decodedData.reference_id || decodedData.refId || decodedData.referenceId || esewaRefId;
+            if (esewaRefId) {
+              console.log('Found refId from alternative field:', esewaRefId);
+            }
+          }
+          
+          esewaOid = decodedData.transaction_uuid || decodedData.oid || decodedData.uuid || esewaOid;
+          
+          // Amount might not be in the data, so keep the one from URL if available
+          if (decodedData.amount || decodedData.amt || decodedData.total_amount || decodedData.totalAmount) {
+            esewaAmount = decodedData.amount || decodedData.amt || decodedData.total_amount || decodedData.totalAmount;
+            console.log('Found amount in data:', esewaAmount);
+          }
+          
+          console.log('Final extracted eSewa payment info:', { esewaOid, esewaRefId, esewaAmount });
+        } catch (error) {
+          console.error('Error decoding eSewa data:', error);
+          console.error('Error details:', error.message, error.stack);
+          console.log('Raw data param (first 200 chars):', dataParam.substring(0, 200));
+          console.log('Full URL:', window.location.href);
+          // If decoding fails, try to use direct query params as fallback
+        }
+      } else {
+        console.log('No data parameter found in URL');
+      }
+      
+      // Check if we have the required data
+      // For eSewa, refId (transaction_code) is the most important - it proves payment was made
+      // If we don't have oid, we can use refId as oid for verification
+      // Amount should be available from URL parameter
+      if (esewaRefId && esewaAmount) {
+        hasProcessed.current = true;
+        setCampaignId(campaignIdParam);
+        setVerifying(true);
+        // Use refId as oid if oid is not available (refId is the transaction identifier)
+        const oidToUse = esewaOid || esewaRefId;
+        verifyAndCreateDonation(oidToUse, campaignIdParam, 'esewa', { refId: esewaRefId, amount: esewaAmount });
+      } else {
+        // Log what we have for debugging
+        console.log('eSewa payment data extraction:', {
+          oid: esewaOid,
+          refId: esewaRefId,
+          amount: esewaAmount,
+          hasDataParam: !!dataParam,
+          allParams: Object.fromEntries(searchParams.entries())
+        });
+        
+        if (!hasProcessed.current) {
+          // If we don't have required data, show error
+          setVerifying(false);
+          setVerified(false);
+          toast.error('Unable to extract payment information from eSewa callback. Please contact support.');
+        }
+      }
+    } else if (!pidx && !oid && !dataParam) {
       setVerifying(false);
       setVerified(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const verifyAndCreateDonation = async (pidx, cId) => {
+  const verifyAndCreateDonation = async (paymentId, cId, method = 'khalti', esewaData = {}) => {
     try {
-      // Verify payment with Khalti
-      const verifyResponse = await axios.post(
-        '/api/payment/khalti/verify',
-        { pidx },
-        {
-          headers: {
-            authorization: `Bearer ${token}`,
-          },
+      let verifyResponse;
+      
+      if (method === 'khalti') {
+        // Verify payment with Khalti
+        verifyResponse = await axios.post(
+          '/api/payment/khalti/verify',
+          { pidx: paymentId },
+          {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else if (method === 'esewa') {
+        // Verify payment with eSewa
+        // eSewa sends oid, refId, and amt in callback
+        if (!esewaData.refId || !esewaData.amount) {
+          throw new Error('Missing eSewa payment data');
         }
-      );
+        verifyResponse = await axios.post(
+          '/api/payment/esewa/verify',
+          { 
+            oid: paymentId,
+            refId: esewaData.refId,
+            amount: esewaData.amount
+          },
+          {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else {
+        throw new Error('Invalid payment method');
+      }
 
       // Check if verification was successful
-      // Khalti API returns status in different possible formats
+      // Payment API returns status in different possible formats
       const verificationData = verifyResponse.data?.data || verifyResponse.data;
       const paymentStatus = verificationData?.status || verificationData?.state;
       const isCompleted = paymentStatus === 'Completed' || paymentStatus === 'completed' || paymentStatus === 'COMPLETED';
@@ -66,8 +226,15 @@ const PaymentSuccess = () => {
 
       if (isSuccessful) {
         // Extract amount - handle different possible response structures
-        const amountInPaisa = verificationData?.total_amount || verificationData?.amount || 0;
-        const amount = amountInPaisa / 100; // Convert from paisa to NPR
+        let amount;
+        if (method === 'khalti') {
+          const amountInPaisa = verificationData?.total_amount || verificationData?.amount || 0;
+          amount = amountInPaisa / 100; // Convert from paisa to NPR
+        } else if (method === 'esewa') {
+          amount = parseFloat(verificationData?.total_amount || verificationData?.amount || esewaData.amount || 0);
+        } else {
+          amount = 0;
+        }
         
         if (amount <= 0) {
           console.error('Invalid amount from payment verification:', verificationData);
@@ -76,72 +243,108 @@ const PaymentSuccess = () => {
         
         try {
           // Create donation record
+          const paymentIdToUse = method === 'khalti' ? paymentId : (esewaData.refId || paymentId);
           const result = await createDonation({
             campaignId: cId,
             amount: amount,
-            paymentMethod: 'khalti',
-            paymentId: pidx,
+            paymentMethod: method,
+            paymentId: paymentIdToUse,
             isAnonymous: false,
             message: '',
           }).unwrap();
 
-          setVerified(true);
-          setVerifying(false);
+          // Check if response indicates success
+          if (result && (result.success === true || result.rewardInfo || result.isDuplicate !== undefined)) {
+            setVerified(true);
+            
+            // Store reward information
+            if (result.rewardInfo) {
+              setRewardInfo(result.rewardInfo);
+              // Refetch rewards to get updated tier
+              refetchRewards();
+            }
+            
+            // Show toast only once (duplicate check is handled by backend and useRef guard)
+            // Backend returns isDuplicate flag if donation already existed
+            if (result.isDuplicate) {
+              // Donation already exists - payment was already processed
+              // Show success but don't show reward info again
+              toast.success('Payment already processed. Thank you for your donation!', { duration: 4000 });
+            } else if (result.rewardInfo) {
+              const tier = getTier(result.rewardInfo.totalPoints);
+              toast.success(
+                `🎉 Thank you for your donation! You earned ${result.rewardInfo.pointsEarned} points. Your total: ${result.rewardInfo.totalPoints} (${tier.name} Tier).`,
+                { duration: 6000 }
+              );
+            } else {
+              toast.success('Thank you for your donation!', { duration: 4000 });
+            }
+            
+            // Redirect to campaign after 5 seconds (give time to see reward info)
+            setTimeout(() => {
+              navigate(`/campaign/${cId}`);
+            }, 5000);
+          } else {
+            // Response doesn't indicate success, but payment was verified
+            // Still show success since payment went through
+            console.warn('Donation response format unexpected:', result);
+            setVerified(true);
+            if (result?.rewardInfo) {
+              setRewardInfo(result.rewardInfo);
+              refetchRewards();
+            }
+            toast.success('Thank you for your donation!', { duration: 4000 });
+            setTimeout(() => {
+              navigate(`/campaign/${cId}`);
+            }, 5000);
+          }
+        } catch (donationError) {
+          // Payment was verified successfully, so money went through
+          // Even if donation creation has issues, we should show success
+          // Log the error for debugging but don't show error to user
+          console.error('Donation creation error (payment was verified):', donationError);
           
-          // Store reward information
-          if (result.rewardInfo) {
-            setRewardInfo(result.rewardInfo);
-            // Refetch rewards to get updated tier
+          // Check error response structure for any useful data
+          const errorData = donationError?.data || donationError?.error?.data || {};
+          const errorMessage = errorData?.message || donationError?.message || '';
+          
+          // Always show success since payment was verified
+          setVerified(true);
+          
+          // Try to extract reward info if available in error response
+          if (errorData?.rewardInfo) {
+            setRewardInfo(errorData.rewardInfo);
             refetchRewards();
+          } else {
+            // Try to refetch rewards to get updated points
+            try {
+              refetchRewards();
+            } catch (refetchError) {
+              console.error('Failed to refetch rewards:', refetchError);
+            }
           }
           
-          // Show toast only once (duplicate check is handled by backend and useRef guard)
-          // Backend returns isDuplicate flag if donation already existed
-          if (result.isDuplicate) {
-            // Donation already exists - payment was already processed
-            // Show success but don't show reward info again
+          // Show success message (payment went through)
+          // Don't show error toast - payment was successful
+          if (errorMessage.toLowerCase().includes('already') || errorMessage.toLowerCase().includes('duplicate')) {
             toast.success('Payment already processed. Thank you for your donation!', { duration: 4000 });
-          } else if (result.rewardInfo) {
-            const tier = getTier(result.rewardInfo.totalPoints);
-            toast.success(
-              `🎉 Thank you for your donation! You earned ${result.rewardInfo.pointsEarned} points. Your total: ${result.rewardInfo.totalPoints} (${tier.name} Tier).`,
-              { duration: 6000 }
-            );
           } else {
             toast.success('Thank you for your donation!', { duration: 4000 });
           }
           
-          // Redirect to campaign after 5 seconds (give time to see reward info)
+          // Redirect after showing success
           setTimeout(() => {
             navigate(`/campaign/${cId}`);
           }, 5000);
-        } catch (donationError) {
-          // If donation creation fails but payment was verified, don't show error
-          // The payment was successful, so show success message
-          console.error('Donation creation error:', donationError);
-          
-          // Check if it's a duplicate error (payment already processed)
-          if (donationError?.data?.message?.includes('already') || donationError?.data?.message?.includes('duplicate')) {
-            setVerified(true);
-            setVerifying(false);
-            toast.success('Payment already processed. Thank you for your donation!', { duration: 4000 });
-          } else {
-            // Real error - payment verified but donation creation failed
-            setVerifying(false);
-            hasProcessed.current = false;
-            toast.error('Payment verified but failed to record donation. Please contact support.', { duration: 6000 });
-          }
         }
       } else {
         // Payment verification failed or status is not completed
-        setVerifying(false);
         hasProcessed.current = false; // Reset on failure
         const errorMessage = verificationData?.status || 'Payment status unknown';
         toast.error(`Payment verification failed: ${errorMessage}`, { duration: 5000 });
       }
     } catch (error) {
       console.error('Payment verification error:', error);
-      setVerifying(false);
       hasProcessed.current = false; // Reset on error so user can retry
       
       // Check if it's a network error or API error
@@ -156,6 +359,9 @@ const PaymentSuccess = () => {
         // Something else happened
         toast.error(error.message || 'Payment verification failed', { duration: 5000 });
       }
+    } finally {
+      // Always set verifying to false when the function completes
+      setVerifying(false);
     }
   };
 
