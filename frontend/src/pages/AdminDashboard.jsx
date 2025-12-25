@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useGetDashboardStatsQuery, useGetPendingCampaignsQuery, useApproveCampaignMutation, useRejectCampaignMutation, useDeleteAdminCampaignMutation, useGetCampaignsQuery, useMarkSuccessStoryMutation, useGetAllUsersQuery, useUpdateUserRoleMutation, useToggleUserStatusMutation, useDeleteUserMutation } from '../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiCheck, FiX, FiTrendingUp, FiUsers, FiHeart, FiFileText, FiChevronDown, FiChevronUp, FiSearch, FiAward, FiUpload, FiVideo, FiFilter, FiUser, FiLock, FiUnlock, FiTrash2 } from 'react-icons/fi';
+import { FiCheck, FiX, FiTrendingUp, FiUsers, FiHeart, FiFileText, FiChevronDown, FiChevronUp, FiSearch, FiAward, FiUpload, FiVideo, FiFilter, FiUser, FiLock, FiUnlock, FiTrash2, FiPhone, FiMapPin, FiDollarSign } from 'react-icons/fi';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { ensureSocketConnected } from '../services/socket';
 import { useSelector } from 'react-redux';
@@ -490,76 +490,138 @@ const AdminDashboard = () => {
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activity</th>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredUsers.map((user) => (
-                          <tr key={user._id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                  <FiUser className="text-primary-600" />
+                        {filteredUsers.map((user) => {
+                          const profileImageUrl = user.profileImage || user.avatar;
+                          const campaignsCount = user.campaignsCreated?.length || 0;
+                          const totalDonated = user.totalDonated || 0;
+                          const rewardPoints = user.rewardPoints || 0;
+                          
+                          return (
+                            <tr key={user._id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden bg-primary-100 ring-2 ring-gray-100 flex items-center justify-center">
+                                    {profileImageUrl ? (
+                                      <img
+                                        src={`http://localhost:5000/${profileImageUrl}`}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.target.style.display = 'none';
+                                        }}
+                                      />
+                                    ) : null}
+                                    {!profileImageUrl && (
+                                      <FiUser className="text-primary-600 w-6 h-6" />
+                                    )}
+                                  </div>
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                    <div className="text-xs text-gray-500">{user.email}</div>
+                                  </div>
                                 </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-600">{user.email}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <select
-                                value={user.role}
-                                onChange={(e) => handleUpdateUserRole(user._id, e.target.value)}
-                                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
-                              >
-                                <option value="visitor">Visitor</option>
-                                <option value="creator">Creator</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
-                                user.status === 'active' 
-                                  ? 'bg-emerald-100 text-emerald-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {user.status === 'active' ? 'Active' : 'Frozen'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleToggleUserStatus(user._id)}
-                                  className={`p-2 rounded-lg transition-colors ${
-                                    user.status === 'active'
-                                      ? 'text-amber-600 hover:bg-amber-50'
-                                      : 'text-emerald-600 hover:bg-emerald-50'
-                                  }`}
-                                  title={user.status === 'active' ? 'Freeze Account' : 'Unfreeze Account'}
-                                >
-                                  {user.status === 'active' ? (
-                                    <FiLock className="w-4 h-4" />
-                                  ) : (
-                                    <FiUnlock className="w-4 h-4" />
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="space-y-1">
+                                  {user.phone && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <FiPhone className="w-3.5 h-3.5 mr-2 text-gray-400" />
+                                      <span>{user.phone}</span>
+                                    </div>
                                   )}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUserClick(user)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Delete User"
+                                  {user.address && (
+                                    <div className="flex items-start text-sm text-gray-600">
+                                      <FiMapPin className="w-3.5 h-3.5 mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
+                                      <span className="line-clamp-1">{user.address}</span>
+                                    </div>
+                                  )}
+                                  {!user.phone && !user.address && (
+                                    <span className="text-xs text-gray-400 italic">No contact info</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <select
+                                  value={user.role}
+                                  onChange={(e) => handleUpdateUserRole(user._id, e.target.value)}
+                                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                                 >
-                                  <FiTrash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                  <option value="visitor">Visitor</option>
+                                  <option value="creator">Creator</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
+                                  user.status === 'active' 
+                                    ? 'bg-emerald-100 text-emerald-800' 
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {user.status === 'active' ? 'Active' : 'Frozen'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="space-y-1 text-sm">
+                                  {campaignsCount > 0 && (
+                                    <div className="flex items-center text-gray-700">
+                                      <FiFileText className="w-3.5 h-3.5 mr-1.5 text-primary-500" />
+                                      <span>{campaignsCount} {campaignsCount === 1 ? 'campaign' : 'campaigns'}</span>
+                                    </div>
+                                  )}
+                                  {totalDonated > 0 && (
+                                    <div className="flex items-center text-gray-700">
+                                      <FiDollarSign className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
+                                      <span>रु {totalDonated.toLocaleString()} donated</span>
+                                    </div>
+                                  )}
+                                  {rewardPoints > 0 && (
+                                    <div className="flex items-center text-gray-700">
+                                      <FiAward className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                                      <span>{rewardPoints.toLocaleString()} points</span>
+                                    </div>
+                                  )}
+                                  {campaignsCount === 0 && totalDonated === 0 && rewardPoints === 0 && (
+                                    <span className="text-xs text-gray-400 italic">No activity</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleToggleUserStatus(user._id)}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      user.status === 'active'
+                                        ? 'text-amber-600 hover:bg-amber-50'
+                                        : 'text-emerald-600 hover:bg-emerald-50'
+                                    }`}
+                                    title={user.status === 'active' ? 'Freeze Account' : 'Unfreeze Account'}
+                                  >
+                                    {user.status === 'active' ? (
+                                      <FiLock className="w-4 h-4" />
+                                    ) : (
+                                      <FiUnlock className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteUserClick(user)}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete User"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
