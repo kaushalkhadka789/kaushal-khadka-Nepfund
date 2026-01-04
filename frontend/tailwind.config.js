@@ -19,6 +19,13 @@ export default {
           800: '#075985',
           900: '#0c4a6e',
         },
+        cream: {
+          50: '#fefbf3',
+          100: '#fdf6e7',
+        },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
     },
   },
