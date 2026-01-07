@@ -315,6 +315,7 @@ export const {
   useUpdateProfileMutation,
 } = userApi;
 
+
 // Reward endpoints
 export const rewardApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -328,6 +329,11 @@ export const rewardApi = apiSlice.injectEndpoints({
         params,
       }),
       providesTags: ['Reward'],
+    }),
+    // ADD THIS NEW ENDPOINT
+    getDonationTrends: builder.query({
+      query: () => '/rewards/trends',
+      providesTags: ['Donation', 'Reward'],
     }),
     grantBonusPoints: builder.mutation({
       query: (data) => ({
@@ -343,5 +349,6 @@ export const rewardApi = apiSlice.injectEndpoints({
 export const {
   useGetMyRewardsQuery,
   useGetTopDonorsQuery,
+  useGetDonationTrendsQuery,
   useGrantBonusPointsMutation,
 } = rewardApi;

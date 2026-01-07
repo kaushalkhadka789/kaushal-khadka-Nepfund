@@ -1,6 +1,18 @@
+import React from 'react';
 import { useGetMyRewardsQuery } from '../services/api';
 import TierBadge from '../components/TierBadge';
-import { FiAward, FiTrendingUp, FiClock, FiHeart } from 'react-icons/fi';
+import { 
+  FiAward, 
+  FiTrendingUp, 
+  FiClock, 
+  FiHeart, 
+  FiFilter, 
+  FiDownload, 
+  FiMoreVertical,
+  FiActivity,
+  FiBookOpen,
+  FiPlusSquare
+} from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -17,8 +29,8 @@ const MyRewards = () => {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center text-red-600">
-        Error loading rewards
+      <div className="max-w-4xl mx-auto px-4 py-12 text-center text-red-600 font-medium">
+        Error loading rewards. Please try again later.
       </div>
     );
   }
@@ -33,147 +45,202 @@ const MyRewards = () => {
   }
 
   const { points, tier, tierProgress, totalDonations, recentTransactions } = rewards;
-  const { currentTier, nextTier, progress, pointsNeeded, amountNeeded } = tierProgress;
+  const { nextTier, progress, pointsNeeded, amountNeeded } = tierProgress;
+
+  // Helper to match icons to campaign categories based on title
+  const getCategoryIcon = (title) => {
+    const t = title.toLowerCase();
+    if (t.includes('foot') || t.includes('training')) return <FiActivity className="text-blue-500" />;
+    if (t.includes('edu') || t.includes('school')) return <FiBookOpen className="text-indigo-500" />;
+    if (t.includes('med') || t.includes('kit') || t.includes('relief')) return <FiPlusSquare className="text-red-500" />;
+    return <FiHeart className="text-primary-500" />;
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">My Rewards</h1>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-50/30 min-h-screen">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">My Rewards</h1>
+          <p className="text-gray-500 mt-1 font-medium">View your impact and donor status</p>
+        </div>
         <Link
           to="/top-donors"
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold flex items-center gap-2"
+          className="inline-flex items-center justify-center px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-50 hover:shadow-md transition-all font-bold gap-2 text-sm"
         >
-          <FiTrendingUp />
+          <FiTrendingUp className="text-primary-600" />
           View Leaderboard
         </Link>
       </div>
 
-      {/* Tier Badge and Points Card */}
+      {/* Main Stats Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-lg p-8 mb-6"
+        className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Donor Status</h2>
-            <div className="flex items-center gap-4">
-              <TierBadge tier={tier} size="lg" />
-              <div className="text-3xl font-bold text-gray-700">
-                {points.toLocaleString()} <span className="text-lg text-gray-500">points</span>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50 blur-2xl"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex-1">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Your Donor Status</h2>
+            <div className="flex items-center gap-6">
+              <div className="p-1 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner">
+                <TierBadge tier={tier} size="lg" />
+              </div>
+              <div>
+                <div className="text-4xl font-black text-gray-900">
+                  {points.toLocaleString()} <span className="text-lg font-medium text-gray-400">pts</span>
+                </div>
+                <p className="text-gray-600 font-bold mt-1">
+                  Current Level: <span className="text-primary-600">{tier.name}</span>
+                </p>
               </div>
             </div>
           </div>
-          <div className="text-6xl">
-            {tier.icon}
-          </div>
-        </div>
 
-        {/* Progress to Next Tier */}
-        {nextTier ? (
-          <div className="mt-6">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Progress to {nextTier.name} Tier</span>
-              <span className="font-semibold">{progress.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 1 }}
-                className="h-3 rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, ${tier.color} 0%, ${nextTier.color} 100%)`,
-                }}
-              />
-            </div>
-            <p className="text-sm text-gray-600">
-              Donate NPR {amountNeeded.toLocaleString()} more to reach {nextTier.name} Tier! ({pointsNeeded} points needed)
-            </p>
+          <div className="flex-1 max-w-md">
+            {nextTier ? (
+              <div className="space-y-3">
+                <div className="flex justify-between items-end text-sm">
+                  <span className="font-bold text-gray-700">Next Tier: {nextTier.name}</span>
+                  <span className="font-black text-primary-600">{progress.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-3 border border-gray-50 shadow-inner overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="h-full rounded-full shadow-sm"
+                    style={{
+                      background: `linear-gradient(90deg, ${tier.color || '#4F46E5'} 0%, ${nextTier.color || '#9333EA'} 100%)`,
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 font-medium italic">
+                  Donate NPR {amountNeeded.toLocaleString()} more ({pointsNeeded} pts) to unlock {nextTier.name}!
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-2xl flex items-center gap-3">
+                <span className="text-2xl">🏆</span>
+                <p className="text-sm font-bold text-yellow-800">
+                  Highest Tier Achieved! You're a top-tier contributor.
+                </p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg">
-            <p className="text-sm font-semibold text-yellow-800">
-              🎉 Congratulations! You've reached the highest tier!
-            </p>
-          </div>
-        )}
-
-        {/* Summary */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-lg font-semibold text-gray-700">
-            You are a <span className="text-primary-600">{tier.name} Donor</span>.
-            {nextTier && ` Donate NPR ${amountNeeded.toLocaleString()} more to reach ${nextTier.name}!`}
-          </p>
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl shadow-md p-6 text-center"
-        >
-          <FiAward className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">{points.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Total Points</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-md p-6 text-center"
-        >
-          <FiHeart className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">{totalDonations}</div>
-          <div className="text-sm text-gray-600">Total Donations</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-md p-6 text-center"
-        >
-          <FiTrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">{tier.name}</div>
-          <div className="text-sm text-gray-600">Current Tier</div>
-        </motion.div>
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {[
+          { label: 'Total Points', value: points.toLocaleString(), icon: <FiAward />, color: 'text-amber-500', bg: 'bg-amber-50' },
+          { label: 'Contributions', value: totalDonations, icon: <FiHeart />, color: 'text-red-500', bg: 'bg-red-50' },
+          { label: 'Current Tier', value: tier.name, icon: <FiTrendingUp />, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        ].map((stat, i) => (
+          <motion.div
+            key={i}
+            whileHover={{ y: -4 }}
+            className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4"
+          >
+            <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center text-xl shadow-inner`}>
+              {stat.icon}
+            </div>
+            <div>
+              <div className="text-xl font-black text-gray-900 leading-tight">{stat.value}</div>
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-tighter">{stat.label}</div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Recent Transactions */}
+      {/* Recent Transactions Table - Matching requested Image UI */}
       {recentTransactions && recentTransactions.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-2xl shadow-lg p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden"
         >
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <FiClock className="w-5 h-5" />
-            Recent Reward Transactions
-          </h3>
-          <div className="space-y-3">
-            {recentTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-              >
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{tx.campaignTitle}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(tx.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">+{tx.pointsEarned} pts</p>
-                  <p className="text-sm text-gray-500">
-                    NPR {tx.donationAmount.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+          {/* Table Header Section */}
+          <div className="px-8 py-6 flex items-center justify-between border-b border-gray-50">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <FiClock className="text-gray-400" />
+              Transaction History
+            </h3>
+            <div className="flex items-center gap-2">
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"><FiFilter /></button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"><FiDownload /></button>
+            </div>
+          </div>
+
+          {/* Actual Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50/50 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-extrabold">
+                  <th className="px-8 py-4">Description</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Points</th>
+                  <th className="px-8 py-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentTransactions.map((tx) => (
+                  <tr key={tx.id} className="group hover:bg-blue-50/30 transition-all duration-200">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100 text-lg group-hover:bg-white transition-colors">
+                          {getCategoryIcon(tx.campaignTitle)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm leading-tight">{tx.campaignTitle}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5 font-medium">Impact Fund Contribution</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-tight">
+                      {new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-[11px] font-mono text-gray-300 font-medium uppercase">
+                        #TRX-{tx.id.toString().slice(-4)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-sm font-black text-gray-800 tracking-tight">
+                        NPR {tx.donationAmount.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-black border border-emerald-100">
+                        +{tx.pointsEarned}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button className="text-gray-300 hover:text-gray-600 transition p-1">
+                        <FiMoreVertical />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer */}
+          <div className="py-5 bg-gray-50/20 text-center border-t border-gray-50">
+             <Link 
+               to="/transactions" 
+               className="text-[13px] font-bold text-gray-500 hover:text-primary-600 transition-colors flex items-center justify-center gap-1 group"
+             >
+               View all transactions 
+               <span className="text-lg group-hover:translate-x-1 transition-transform">›</span>
+             </Link>
           </div>
         </motion.div>
       )}
@@ -182,4 +249,3 @@ const MyRewards = () => {
 };
 
 export default MyRewards;
-

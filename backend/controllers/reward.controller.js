@@ -232,3 +232,49 @@ export const updateRewardConfig = async (req, res) => {
   }
 };
 
+// @desc    Get monthly donation trends for chart
+// @route   GET /api/rewards/trends
+// @access  Public
+export const getDonationTrends = async (req, res) => {
+  try {
+    // 1. Aggregate completed donations grouped by month
+    const trends = await Donation.aggregate([
+      {
+        // Only include completed donations
+        $match: { status: 'completed' } 
+      },
+      {
+        // Group by month of the 'createdAt' field
+        $group: {
+          _id: { $month: "$createdAt" },
+          amount: { $sum: "$amount" }
+        }
+      },
+      { 
+        // Sort from January (1) to December (12)
+        $sort: { "_id": 1 } 
+      }
+    ]);
+
+    // 2. Map the numeric month (1-12) to a Name (Jan-Dec)
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // 3. Format data to match what Recharts expects: { month: 'Jan', amount: 5000 }
+    const formattedData = trends.map(item => ({
+      month: monthNames[item._id - 1],
+      amount: item.amount
+    }));
+
+    // 4. Send the real data back to the frontend
+    res.status(200).json({
+      success: true,
+      data: formattedData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch donation trends',
+      error: error.message
+    });
+  }
+};
