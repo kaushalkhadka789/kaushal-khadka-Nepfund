@@ -1,9 +1,22 @@
 import express from 'express';
 import { protect } from '../middleware/auth.middleware.js';
-import { initiateKhaltiPayment, verifyKhaltiPayment, initiateEsewaPayment, verifyEsewaPayment } from '../utils/payment.js';
+import { 
+  initiateKhaltiPayment, 
+  verifyKhaltiPayment, 
+  initiateEsewaPayment, 
+  verifyEsewaPayment 
+} from '../utils/payment.js';
 import User from '../models/User.model.js';
 
+// NEW: Imports for Receipt and Email
+import { generateReceiptBuffer } from '../utils/receiptGenerator.js';
+import { sendDonationReceiptEmail } from '../utils/sendEmail.js';
+
 const router = express.Router();
+
+// ---------------------------------------------------------
+// KHALTI ROUTES
+// ---------------------------------------------------------
 
 // Initiate Khalti payment
 router.post('/khalti/initiate', protect, async (req, res) => {
@@ -53,7 +66,7 @@ router.post('/khalti/verify', protect, async (req, res) => {
 
     // Check if payment is completed
     const status = verification?.status || verification?.state;
-    const isCompleted = status === 'Completed' || status === 'completed' || status === 'COMPLETED';
+    const isCompleted = ['Completed', 'completed', 'COMPLETED'].includes(status);
 
     if (!isCompleted) {
       return res.status(200).json({
@@ -63,8 +76,30 @@ router.post('/khalti/verify', protect, async (req, res) => {
       });
     }
 
+    // --- AUTOMATED EMAIL LOGIC ---
+    if (isCompleted) {
+      const user = await User.findById(req.user.id);
+      
+      // Debugging: Check what Khalti is actually sending
+      console.log("Khalti Verification Data:", verification);
+
+      // Khalti returns 'total_amount' in Paisa (not 'amount')
+      // We check total_amount first, then fallback to amount, then 0
+      const rawAmount = verification?.total_amount || verification?.amount || 0;
+      const khaltiAmountInRupees = Number(rawAmount) / 100;
+      
+      console.log("Extracted Amount (Paisa):", rawAmount, "-> Amount (NPR):", khaltiAmountInRupees);
+
+      if (user && user.email) {
+        const pdfBuffer = generateReceiptBuffer(khaltiAmountInRupees, user.name, pidx);
+        await sendDonationReceiptEmail(user.email, user.name, pdfBuffer);
+      }
+    }
+    // ------------------------------
+
     res.status(200).json({
       success: true,
+      message: 'Payment verified and receipt sent to inbox.',
       data: verification
     });
   } catch (error) {
@@ -75,6 +110,10 @@ router.post('/khalti/verify', protect, async (req, res) => {
     });
   }
 });
+
+// ---------------------------------------------------------
+// ESEWA ROUTES
+// ---------------------------------------------------------
 
 // Initiate eSewa payment
 router.post('/esewa/initiate', protect, async (req, res) => {
@@ -124,7 +163,7 @@ router.post('/esewa/verify', protect, async (req, res) => {
 
     // Check if payment is completed
     const status = verification?.status || verification?.state;
-    const isCompleted = status === 'Completed' || status === 'completed' || status === 'COMPLETED';
+    const isCompleted = ['Completed', 'completed', 'COMPLETED'].includes(status);
 
     if (!isCompleted) {
       return res.status(200).json({
@@ -134,8 +173,23 @@ router.post('/esewa/verify', protect, async (req, res) => {
       });
     }
 
+    // --- AUTOMATED EMAIL LOGIC ---
+    if (isCompleted) {
+      const user = await User.findById(req.user.id);
+      
+      // Ensure the amount from req.body is a Number
+      const esewaAmount = Number(amount) || 0;
+
+      if (user && user.email) {
+        const pdfBuffer = generateReceiptBuffer(esewaAmount, user.name, refId);
+        await sendDonationReceiptEmail(user.email, user.name, pdfBuffer);
+      }
+    }
+    // ------------------------------
+
     res.status(200).json({
       success: true,
+      message: 'Payment verified and receipt sent to inbox.',
       data: verification
     });
   } catch (error) {
@@ -148,4 +202,3 @@ router.post('/esewa/verify', protect, async (req, res) => {
 });
 
 export default router;
-

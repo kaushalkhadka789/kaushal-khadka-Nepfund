@@ -15,7 +15,7 @@ import {
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
-import { ORGANIZATION_LOGO, DIGITAL_SIGNATURE } from '../utils/receiptAssets';
+import { ORGANIZATION_LOGO, DIGITAL_SIGNATURE } from '../../../backend/utils/receiptAssets';
 
 const MyRewards = () => {
   const { data, isLoading, error } = useGetMyRewardsQuery();

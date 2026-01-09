@@ -5,8 +5,6 @@ let transporter = null;
 
 /**
  * Get or create the SMTP transporter
- * @returns {Object} Nodemailer transporter
- * @throws {Error} If SMTP credentials are not configured
  */
 const getTransporter = () => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
@@ -24,11 +22,10 @@ const getTransporter = () => {
       },
     });
 
-    // Verify transporter configuration asynchronously (non-blocking)
-    transporter.verify((error, success) => {
+    // Verify transporter configuration
+    transporter.verify((error) => {
       if (error) {
         console.error('SMTP configuration error:', error.message);
-        console.error('Please check your SMTP_USER and SMTP_PASSWORD environment variables');
       } else if (process.env.NODE_ENV === 'development') {
         console.log('✓ SMTP transporter verified successfully');
       }
@@ -40,155 +37,38 @@ const getTransporter = () => {
 
 /**
  * Send welcome email to newly registered user
- * @param {string} email - Recipient email address
- * @param {string} name - User's name
- * @returns {Promise<Object>} - Email sending result
  */
 export const sendWelcomeEmail = async (email, name) => {
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const homepageUrl = `${frontendUrl}/`;
 
-    // Email HTML template
     const htmlContent = `
       <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to NepFund!</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-          }
-          .container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .header h1 {
-            color: #2563eb;
-            margin: 0;
-          }
-          .content {
-            margin-bottom: 30px;
-          }
-          .content p {
-            margin-bottom: 15px;
-          }
-          .button {
-            display: inline-block;
-            padding: 12px 30px;
-            background-color: #2563eb;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
-          }
-          .button:hover {
-            background-color: #1d4ed8;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
-            font-size: 12px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Welcome to NepFund! 🎉</h1>
+      <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h1 style="color: #2563eb; text-align: center;">Welcome to NepFund! 🎉</h1>
+          <p>Dear ${name},</p>
+          <p>Thank you for joining NepFund! We're thrilled to have you as part of our community dedicated to making a positive impact in Nepal.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${homepageUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visit NepFund</a>
           </div>
-          <div class="content">
-            <p>Dear ${name},</p>
-            <p>Thank you for joining NepFund! We're thrilled to have you as part of our community dedicated to making a positive impact in Nepal.</p>
-            <p>NepFund is a crowdfunding platform where you can:</p>
-            <ul>
-              <li>Support meaningful campaigns and causes</li>
-              <li>Create your own fundraising campaigns</li>
-              <li>Make a difference in your community</li>
-              <li>Earn reward points for your contributions</li>
-            </ul>
-            <p>We're here to help you get started. If you have any questions or need assistance, please don't hesitate to reach out to us.</p>
-            <p style="text-align: center;">
-              <a href="${homepageUrl}" class="button">Visit NepFund</a>
-            </p>
-            <p>Once again, welcome aboard! We look forward to seeing the positive impact you'll make.</p>
-            <p>Best regards,<br>The NepFund Team</p>
-          </div>
-          <div class="footer">
-            <p>This is an automated email. Please do not reply to this message.</p>
-            <p>&copy; ${new Date().getFullYear()} NepFund. All rights reserved.</p>
-          </div>
+          <p>Best regards,<br>The NepFund Team</p>
         </div>
       </body>
       </html>
     `;
 
-    // Plain text version
-    const textContent = `
-      Welcome to NepFund!
-      
-      Dear ${name},
-      
-      Thank you for joining NepFund! We're thrilled to have you as part of our community dedicated to making a positive impact in Nepal.
-      
-      NepFund is a crowdfunding platform where you can:
-      - Support meaningful campaigns and causes
-      - Create your own fundraising campaigns
-      - Make a difference in your community
-      - Earn reward points for your contributions
-      
-      We're here to help you get started. If you have any questions or need assistance, please don't hesitate to reach out to us.
-      
-      Visit NepFund: ${homepageUrl}
-      
-      Once again, welcome aboard! We look forward to seeing the positive impact you'll make.
-      
-      Best regards,
-      The NepFund Team
-      
-      ---
-      This is an automated email. Please do not reply to this message.
-      © ${new Date().getFullYear()} NepFund. All rights reserved.
-    `;
-
-    // Email options
     const mailOptions = {
       from: `"NepFund" <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Welcome to NepFund!',
-      text: textContent,
       html: htmlContent,
     };
 
-    // Send email
     const info = await getTransporter().sendMail(mailOptions);
-    // Email sent successfully (logged only in development for debugging)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✓ Welcome email sent to:', email);
-    }
-    return {
-      success: true,
-      messageId: info.messageId,
-    };
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending welcome email:', error);
     throw new Error(`Failed to send welcome email: ${error.message}`);
@@ -196,13 +76,55 @@ export const sendWelcomeEmail = async (email, name) => {
 };
 
 /**
- * Generic email sending function (for future use)
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email
- * @param {string} options.subject - Email subject
- * @param {string} options.html - HTML content
- * @param {string} options.text - Plain text content
- * @returns {Promise<Object>} - Email sending result
+ * Send donation receipt email with PDF attachment
+ * @param {string} email - Recipient email address
+ * @param {string} name - User's name
+ * @param {Buffer} pdfBuffer - The PDF Buffer from receiptGenerator.js
+ */
+export const sendDonationReceiptEmail = async (email, name, pdfBuffer) => {
+  try {
+    const mailOptions = {
+      from: `"NepFund Support" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Your Donation Receipt - NepFund',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 30px;">
+            <h2 style="color: #4f46e5; margin-top: 0;">Thank You for Your Kindness!</h2>
+            <p>Dear ${name},</p>
+            <p>We have successfully received your donation. Your support helps us drive real impact in our communities.</p>
+            <p><strong>Please find your official donation receipt attached to this email as a PDF.</strong></p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 14px; color: #666;">If you have any questions regarding this transaction, feel free to contact our support team.</p>
+            <p>With gratitude,<br/><strong>The NepFund Team</strong></p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `Donation_Receipt_${new Date().getTime()}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    const info = await getTransporter().sendMail(mailOptions);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✓ Receipt email sent successfully to:', email);
+    }
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending receipt email:', error);
+    // Returning success: false instead of throwing so the main payment logic isn't broken
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Generic email sending function
  */
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {
@@ -215,14 +137,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
     };
 
     const info = await getTransporter().sendMail(mailOptions);
-    // Email sent successfully (logged only in development for debugging)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✓ Email sent to:', to);
-    }
-    return {
-      success: true,
-      messageId: info.messageId,
-    };
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending email:', error);
     throw new Error(`Failed to send email: ${error.message}`);
@@ -231,6 +146,6 @@ export const sendEmail = async ({ to, subject, html, text }) => {
 
 export default {
   sendWelcomeEmail,
+  sendDonationReceiptEmail,
   sendEmail,
 };
-
