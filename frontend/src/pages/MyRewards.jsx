@@ -8,13 +8,14 @@ import {
   FiHeart, 
   FiFilter, 
   FiDownload, 
-  FiMoreVertical,
   FiActivity,
   FiBookOpen,
-  FiPlusSquare
+  FiPlusSquare,
+  FiFileText
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf'; // Import jsPDF
 
 const MyRewards = () => {
   const { data, isLoading, error } = useGetMyRewardsQuery();
@@ -47,7 +48,65 @@ const MyRewards = () => {
   const { points, tier, tierProgress, totalDonations, recentTransactions } = rewards;
   const { nextTier, progress, pointsNeeded, amountNeeded } = tierProgress;
 
-  // Helper to match icons to campaign categories based on title
+  // --- NEW: PDF GENERATION LOGIC ---
+  const downloadReceipt = (tx) => {
+    const doc = new jsPDF();
+    const date = new Date(tx.createdAt).toLocaleDateString();
+    const trxId = `#TRX-${tx.id.toString().slice(-4).toUpperCase()}`;
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(79, 70, 229); // Primary Color
+    doc.text("IMPACT PLATFORM", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("Official Donation Receipt", 105, 28, { align: "center" });
+
+    // Divider
+    doc.setDrawColor(230);
+    doc.line(20, 35, 190, 35);
+
+    // Transaction Info
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Transaction Details", 20, 50);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`Receipt ID: ${trxId}`, 20, 60);
+    doc.text(`Date: ${date}`, 20, 70);
+    doc.text(`Campaign: ${tx.campaignTitle}`, 20, 80);
+
+    // Table Header
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, 95, 170, 10, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Description", 25, 102);
+    doc.text("Amount (NPR)", 150, 102);
+
+    // Table Content
+    doc.setFont("helvetica", "normal");
+    doc.text("Donation Contribution", 25, 115);
+    doc.text(`Rs. ${tx.donationAmount.toLocaleString()}`, 150, 115);
+    doc.text(`Points Earned: +${tx.pointsEarned} XP`, 25, 125);
+
+    // Footer
+    doc.setDrawColor(230);
+    doc.line(20, 140, 190, 140);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Paid: Rs. " + tx.donationAmount.toLocaleString(), 190, 155, { align: "right" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(150);
+    doc.text("Thank you for your generous contribution to the community!", 105, 180, { align: "center" });
+
+    // Save PDF
+    doc.save(`Receipt_${trxId}.pdf`);
+  };
+
   const getCategoryIcon = (title) => {
     const t = title.toLowerCase();
     if (t.includes('foot') || t.includes('training')) return <FiActivity className="text-blue-500" />;
@@ -156,7 +215,7 @@ const MyRewards = () => {
         ))}
       </div>
 
-      {/* Recent Transactions Table - Matching requested Image UI */}
+      {/* Recent Transactions Table */}
       {recentTransactions && recentTransactions.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -164,7 +223,6 @@ const MyRewards = () => {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden"
         >
-          {/* Table Header Section */}
           <div className="px-8 py-6 flex items-center justify-between border-b border-gray-50">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <FiClock className="text-gray-400" />
@@ -172,11 +230,9 @@ const MyRewards = () => {
             </h3>
             <div className="flex items-center gap-2">
               <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"><FiFilter /></button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"><FiDownload /></button>
             </div>
           </div>
 
-          {/* Actual Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -186,7 +242,7 @@ const MyRewards = () => {
                   <th className="px-6 py-4">ID</th>
                   <th className="px-6 py-4">Amount</th>
                   <th className="px-6 py-4">Points</th>
-                  <th className="px-8 py-4"></th>
+                  <th className="px-8 py-4 text-right">Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -222,8 +278,14 @@ const MyRewards = () => {
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <button className="text-gray-300 hover:text-gray-600 transition p-1">
-                        <FiMoreVertical />
+                      {/* DOWNLOAD BUTTON REPLACED HERE */}
+                      <button 
+                        onClick={() => downloadReceipt(tx)}
+                        className="p-2.5 bg-gray-50 text-primary-600 hover:bg-primary-600 hover:text-white rounded-xl transition-all shadow-sm flex items-center gap-2 ml-auto border border-gray-100"
+                        title="Download PDF Receipt"
+                      >
+                        <FiDownload className="text-lg" />
+                        <span className="text-[10px] font-bold uppercase">PDF</span>
                       </button>
                     </td>
                   </tr>
@@ -232,7 +294,6 @@ const MyRewards = () => {
             </table>
           </div>
 
-          {/* Table Footer */}
           <div className="py-5 bg-gray-50/20 text-center border-t border-gray-50">
              <Link 
                to="/transactions" 
