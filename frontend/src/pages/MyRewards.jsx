@@ -11,11 +11,11 @@ import {
   FiActivity,
   FiBookOpen,
   FiPlusSquare,
-  FiFileText
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { jsPDF } from 'jspdf'; // Import jsPDF
+import { jsPDF } from 'jspdf';
+import { ORGANIZATION_LOGO, DIGITAL_SIGNATURE } from '../utils/receiptAssets';
 
 const MyRewards = () => {
   const { data, isLoading, error } = useGetMyRewardsQuery();
@@ -48,60 +48,102 @@ const MyRewards = () => {
   const { points, tier, tierProgress, totalDonations, recentTransactions } = rewards;
   const { nextTier, progress, pointsNeeded, amountNeeded } = tierProgress;
 
-  // --- NEW: PDF GENERATION LOGIC ---
+  // --- PDF GENERATION LOGIC WITH LOGO & SIGNATURE ---
   const downloadReceipt = (tx) => {
     const doc = new jsPDF();
-    const date = new Date(tx.createdAt).toLocaleDateString();
+    const date = new Date(tx.createdAt).toLocaleDateString('en-US', { 
+      year: 'numeric', month: 'long', day: 'numeric' 
+    });
     const trxId = `#TRX-${tx.id.toString().slice(-4).toUpperCase()}`;
 
-    // Header
+    // 1. ADD WATERMARK (Light Grey Text in Background)
+    doc.setTextColor(245, 245, 245);
+    doc.setFontSize(60);
+    doc.setFont("helvetica", "bold");
+    doc.text("OFFICIAL RECEIPT", 105, 150, { align: "center", angle: 45 });
+
+    // 2. HEADER WITH LOGO
+    try {
+      // addImage(data, format, x, y, w, h)
+      doc.addImage(ORGANIZATION_LOGO, 'PNG', 20, 15, 25, 25);
+    } catch (e) {
+      console.error("Logo Error:", e);
+    }
+
     doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229); // Primary Color
-    doc.text("IMPACT PLATFORM", 105, 20, { align: "center" });
+    doc.setTextColor(79, 70, 229); // Primary Indigo
+    doc.setFont("helvetica", "bold");
+    doc.text("IMPACT PLATFORM", 50, 25);
     
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(100);
-    doc.text("Official Donation Receipt", 105, 28, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.text("Katari, Bagmati Province, Nepal", 50, 31);
+    doc.text("Contact: support@impactplatform.com | Web: impact.org", 50, 36);
 
     // Divider
     doc.setDrawColor(230);
-    doc.line(20, 35, 190, 35);
+    doc.line(20, 45, 190, 45);
 
-    // Transaction Info
+    // 3. TRANSACTION INFO
     doc.setFontSize(12);
     doc.setTextColor(0);
     doc.setFont("helvetica", "bold");
-    doc.text("Transaction Details", 20, 50);
-
-    doc.setFont("helvetica", "normal");
-    doc.text(`Receipt ID: ${trxId}`, 20, 60);
-    doc.text(`Date: ${date}`, 20, 70);
-    doc.text(`Campaign: ${tx.campaignTitle}`, 20, 80);
-
-    // Table Header
-    doc.setFillColor(248, 250, 252);
-    doc.rect(20, 95, 170, 10, 'F');
-    doc.setFont("helvetica", "bold");
-    doc.text("Description", 25, 102);
-    doc.text("Amount (NPR)", 150, 102);
-
-    // Table Content
-    doc.setFont("helvetica", "normal");
-    doc.text("Donation Contribution", 25, 115);
-    doc.text(`Rs. ${tx.donationAmount.toLocaleString()}`, 150, 115);
-    doc.text(`Points Earned: +${tx.pointsEarned} XP`, 25, 125);
-
-    // Footer
-    doc.setDrawColor(230);
-    doc.line(20, 140, 190, 140);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total Paid: Rs. " + tx.donationAmount.toLocaleString(), 190, 155, { align: "right" });
+    doc.text("Receipt Details", 20, 55);
 
     doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Receipt ID: ${trxId}`, 20, 65);
+    doc.text(`Date of Contribution: ${date}`, 20, 72);
+    doc.text(`Campaign: ${tx.campaignTitle}`, 20, 79);
+
+    // 4. TABLE SECTION
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, 90, 170, 10, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Description", 25, 97);
+    doc.text("Amount (NPR)", 150, 97);
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Charitable Donation Contribution", 25, 110);
+    doc.text(`Rs. ${tx.donationAmount.toLocaleString()}`, 150, 110);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Reward Points Earned: +${tx.pointsEarned} XP`, 25, 118);
+
+    // Total Line
+    doc.setDrawColor(200);
+    doc.line(20, 130, 190, 130);
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Paid: Rs. " + tx.donationAmount.toLocaleString(), 190, 142, { align: "right" });
+
+    // 5. SIGNATURE SECTION
+    const sigY = 190;
+    try {
+      doc.addImage(DIGITAL_SIGNATURE, 'PNG', 145, sigY - 18, 35, 15);
+    } catch (e) {
+      console.error("Signature Error:", e);
+    }
+    
+    doc.setDrawColor(150);
+    doc.line(140, sigY, 185, sigY); // Signature line
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "bold");
+    doc.text("Authorized Signatory", 162.5, sigY + 5, { align: "center" });
+
+    // 6. FOOTER
+    doc.setFontSize(10);
     doc.setFont("helvetica", "italic");
-    doc.setTextColor(150);
-    doc.text("Thank you for your generous contribution to the community!", 105, 180, { align: "center" });
+    doc.setTextColor(120);
+    doc.text("Thank you for your generous contribution. Your support changes lives.", 105, 220, { align: "center" });
+
+    doc.setFontSize(8);
+    doc.setTextColor(180);
+    doc.text("This is a system-generated document. No physical signature required.", 105, 280, { align: "center" });
 
     // Save PDF
     doc.save(`Receipt_${trxId}.pdf`);
@@ -278,7 +320,6 @@ const MyRewards = () => {
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      {/* DOWNLOAD BUTTON REPLACED HERE */}
                       <button 
                         onClick={() => downloadReceipt(tx)}
                         className="p-2.5 bg-gray-50 text-primary-600 hover:bg-primary-600 hover:text-white rounded-xl transition-all shadow-sm flex items-center gap-2 ml-auto border border-gray-100"
