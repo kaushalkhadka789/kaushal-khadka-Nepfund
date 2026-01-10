@@ -3,7 +3,10 @@ import { useGetMyCampaignsQuery } from '../services/api';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { ensureSocketConnected } from '../services/socket';
-import { FiEdit, FiTrash2, FiEye, FiClock } from 'react-icons/fi';
+import { 
+  FiEdit3, FiEye, FiClock, FiPlus, 
+  FiTrendingUp, FiTarget, FiZap 
+} from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
 const MyCampaigns = () => {
@@ -14,165 +17,182 @@ const MyCampaigns = () => {
     const socket = ensureSocketConnected({ userId: user?._id, role: 'user' });
     if (!socket) return;
 
-    const onCampaignUpdated = () => {
-      refetch();
-    };
-
+    const onCampaignUpdated = () => refetch();
     socket.on('campaign:updated', onCampaignUpdated);
+    
     return () => {
       socket.off('campaign:updated', onCampaignUpdated);
     };
   }, [user?._id, refetch]);
 
+  const campaigns = (data?.data || []).filter((c) => c.status !== 'rejected');
+
+  // Dashboard Metrics
+  const totalRaised = campaigns.reduce((acc, curr) => acc + (curr.raisedAmount || 0), 0);
+  const activeCount = campaigns.filter(c => c.status === 'approved').length;
+
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case 'approved': return 'bg-emerald-100 text-emerald-700';
+      case 'pending': return 'bg-amber-100 text-amber-700';
+      case 'completed': return 'bg-indigo-100 text-indigo-700';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
-        <p className="mt-4 text-gray-600">Loading your campaigns...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  // NOTE: Logic preserved - filtering out rejected campaigns
-  const campaigns = (data?.data || []).filter((c) => c.status !== 'rejected');
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-700';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'rejected':
-        return 'bg-red-100 text-red-700';
-      case 'completed':
-        return 'bg-blue-100 text-blue-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50/50 min-h-screen">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-10">
-        My Campaigns
-      </h1>
+    <div className="max-w-6xl mx-auto px-4 py-8 bg-gray-50/30 min-h-screen">
+      
+      {/* --- COMPACT HEADER --- */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">My Campaigns</h1>
+          <p className="text-sm text-gray-500 font-medium">Overview of your fundraising impact</p>
+        </div>
+        <Link
+          to="/create-campaign"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-primary-700 transition-all active:scale-95"
+        >
+          <FiPlus /> Start New Campaign
+        </Link>
+      </div>
+
+      {/* --- TIGHT SUMMARY STATS --- */}
+      {campaigns.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+            <MiniStat label="Total Raised" value={`रु ${totalRaised.toLocaleString()}`} icon={<FiTrendingUp />} color="text-emerald-600" />
+            <MiniStat label="Active Campaigns" value={activeCount} icon={<FiZap />} color="text-amber-500" />
+            <MiniStat label="Total Campaigns" value={campaigns.length} icon={<FiTarget />} color="text-primary-600" />
+        </div>
+      )}
 
       {campaigns.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl shadow-lg border border-gray-100">
-          <p className="text-gray-500 text-lg mb-6">You haven't created any campaigns yet. Start your mission now!</p>
-          <Link
-            to="/create-campaign"
-            className="inline-flex items-center px-8 py-3 bg-primary-600 text-white rounded-full font-semibold shadow-lg hover:bg-primary-700 transition transform hover:scale-[1.02]"
-          >
-            Create Your First Campaign
-          </Link>
+        <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-300">
+          <p className="text-gray-400 font-medium">No campaigns found. Ready to make a difference?</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { transition: { staggerChildren: 0.05 } }
+          }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {campaigns.map((campaign) => {
-            const progress = ((campaign.raisedAmount / campaign.goalAmount) * 100);
+            const progress = (campaign.raisedAmount / campaign.goalAmount) * 100;
             const daysLeft = Math.ceil((new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24));
-            const isEnded = daysLeft <= 0 || progress >= 100;
-            const canEdit = campaign.status !== 'completed' && campaign.status !== 'rejected';
-
+            
             return (
               <motion.div
                 key={campaign._id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
               >
-                {/* Image Header - Fixed height h-44 for rectangular card */}
-                <div className="relative w-full h-44 overflow-hidden">
-                  {campaign.images && campaign.images.length > 0 ? (
+                {/* Compact Image - Height reduced to h-40 */}
+                <div className="relative h-40 w-full overflow-hidden bg-gray-100">
+                  {campaign.images?.[0] ? (
                     <img
                       src={`http://localhost:5000/${campaign.images[0]}`}
-                      alt={campaign.title}
-                      className="w-full h-full object-cover transition-transform duration-500"
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-medium">No Image</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300"><FiTarget size={24}/></div>
                   )}
                   
-                  {/* Category Badge - Top Left */}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-semibold rounded-full shadow-sm">
+                  {/* Category & Status Overlay */}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider rounded-md">
                       {campaign.category}
                     </span>
                   </div>
-
-                  {/* Status Badge - Top Right */}
                   <div className="absolute top-3 right-3">
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusColor(campaign.status)}`}>
-                      {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                    <span className={`px-2 py-1 text-[9px] font-black uppercase rounded-md shadow-sm ${getStatusStyles(campaign.status)}`}>
+                      {campaign.status}
                     </span>
                   </div>
                 </div>
                 
-                {/* Content Body - p-4 for consistency */}
+                {/* Content Area - Reduced Padding */}
                 <div className="p-4 flex flex-col flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-2">
+                  <h3 className="text-md font-bold text-gray-900 line-clamp-1 mb-1 group-hover:text-primary-600 transition-colors">
                     {campaign.title}
                   </h3>
                   
-                  {/* Progress Section */}
-                  <div className="my-3 flex-none">
-                    <div className="flex justify-between text-xs mb-1 font-medium">
-                      <span className="text-gray-500">Progress</span>
-                      <span className="font-semibold text-primary-700">{Math.min(progress, 100).toFixed(0)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-primary-600 h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${Math.min(progress, 100)}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Raised: <span className="font-semibold text-gray-800">रु {campaign.raisedAmount?.toLocaleString()}</span> / Goal: <span className="font-semibold text-gray-800">रु {campaign.goalAmount?.toLocaleString()}</span>
-                    </p>
+                  <div className="flex items-baseline gap-1 mb-3">
+                     <span className="text-lg font-black text-gray-900">रु {campaign.raisedAmount?.toLocaleString()}</span>
+                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/ रु {campaign.goalAmount?.toLocaleString()}</span>
                   </div>
 
-                  {/* Days Left */}
-                  <div className="flex items-center text-sm text-gray-600 mt-auto pt-3 border-t border-gray-100">
-                    <FiClock className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="font-medium">{isEnded ? 'Campaign Ended' : `${daysLeft} days left`}</span>
+                  {/* Slim Progress Bar */}
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full mb-4">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(progress, 100)}%` }}
+                      className={`h-full rounded-full ${progress >= 100 ? 'bg-emerald-500' : 'bg-primary-600'}`}
+                    />
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex space-x-3 mt-4">
+                  {/* Footer Meta */}
+                  <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-tight mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <FiClock className={daysLeft <= 0 ? 'text-red-500' : 'text-primary-500'} />
+                      <span>{daysLeft <= 0 ? 'Ended' : `${daysLeft}d left`}</span>
+                    </div>
+                    <span className="text-primary-600">{Math.round(progress)}% Funded</span>
+                  </div>
+
+                  {/* Compact Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2 mt-auto">
                     <Link
                       to={`/campaign/${campaign._id}`}
-                      className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+                      className="flex items-center justify-center gap-1.5 py-2 text-xs bg-gray-50 text-gray-600 rounded-lg font-bold hover:bg-gray-100 transition-colors border border-gray-100"
                     >
-                      <FiEye className="w-4 h-4" />
-                      <span>View Campaign</span>
+                      <FiEye size={14} /> View
                     </Link>
-                    {canEdit && (
+                    {campaign.status !== 'completed' && (
                       <Link
                         to={`/edit-campaign/${campaign._id}`}
-                        className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                        className="flex items-center justify-center gap-1.5 py-2 text-xs bg-primary-50 text-primary-600 rounded-lg font-bold hover:bg-primary-100 transition-colors border border-primary-100"
                       >
-                        <FiEdit className="w-4 h-4" />
-                        <span>Edit Details</span>
+                        <FiEdit3 size={14} /> Edit
                       </Link>
                     )}
-                    {/* Trash icon maintained for future logic if delete functionality is added */}
-                    {/* {!canEdit && (
-                        <button disabled className="flex-1 flex items-center justify-center space-x-1 px-4 py-2 text-sm bg-red-100 text-red-400 rounded-lg cursor-not-allowed">
-                            <FiTrash2 className="w-4 h-4" />
-                            <span>Delete</span>
-                        </button>
-                    )} */}
                   </div>
                 </div>
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   );
 };
+
+// --- HELPER COMPONENTS ---
+
+const MiniStat = ({ label, value, icon, color }) => (
+    <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-lg ${color}`}>
+            {icon}
+        </div>
+        <div>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{label}</p>
+            <p className="text-md font-black text-gray-900">{value}</p>
+        </div>
+    </div>
+);
 
 export default MyCampaigns;
