@@ -320,7 +320,10 @@ export const {
 export const rewardApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMyRewards: builder.query({
-      query: () => '/rewards/me',
+      query: (params = {}) => ({
+        url: '/rewards/me',
+        params,
+      }),
       providesTags: ['User', 'Reward'],
     }),
     getTopDonors: builder.query({

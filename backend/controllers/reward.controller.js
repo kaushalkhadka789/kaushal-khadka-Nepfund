@@ -23,12 +23,26 @@ export const getMyRewards = async (req, res) => {
     const currentTier = getTier(points);
     const tierProgress = getTierProgress(points);
 
-    // Get recent reward transactions from database
+    // Pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const totalTransactions = await RewardTransaction.countDocuments({ userId: req.user.id });
+
+    // Get recent reward transactions from database with pagination
     const recentTransactions = await RewardTransaction.find({ userId: req.user.id })
       .populate('campaignId', 'title')
       .sort({ createdAt: -1 })
-      .limit(10)
+      .skip(skip)
+      .limit(limit)
       .lean(); // Use lean() for better performance
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalTransactions / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     // Get total donations count from database
     const totalDonations = await Donation.countDocuments({ 
@@ -57,7 +71,15 @@ export const getMyRewards = async (req, res) => {
           bonusPoints: tx.bonusPoints,
           reason: tx.reason,
           createdAt: tx.createdAt
-        }))
+        })),
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalTransactions,
+          limit,
+          hasNextPage,
+          hasPrevPage
+        }
       }
     });
   } catch (error) {

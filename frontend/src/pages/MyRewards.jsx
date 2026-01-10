@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGetMyRewardsQuery } from '../services/api';
 import TierBadge from '../components/TierBadge';
 import { 
@@ -11,6 +11,8 @@ import {
   FiActivity,
   FiBookOpen,
   FiPlusSquare,
+  FiChevronLeft,
+  FiChevronRight,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -18,7 +20,13 @@ import { jsPDF } from 'jspdf';
 import { ORGANIZATION_LOGO, DIGITAL_SIGNATURE } from '../../../backend/utils/receiptAssets';
 
 const MyRewards = () => {
-  const { data, isLoading, error } = useGetMyRewardsQuery();
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 4;
+
+  const { data, isLoading, error } = useGetMyRewardsQuery({
+    page: currentPage,
+    limit: transactionsPerPage,
+  });
 
   if (isLoading) {
     return (
@@ -45,7 +53,16 @@ const MyRewards = () => {
     );
   }
 
-  const { points, tier, tierProgress, totalDonations, recentTransactions } = rewards;
+  const { points, tier, tierProgress, totalDonations, recentTransactions, pagination } = rewards;
+  
+  // Debug: Log pagination data to help troubleshoot
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Rewards data:', { 
+      hasPagination: !!pagination, 
+      pagination,
+      transactionsCount: recentTransactions?.length 
+    });
+  }
   const { nextTier, progress, pointsNeeded, amountNeeded } = tierProgress;
 
   // --- PDF GENERATION LOGIC WITH LOGO & SIGNATURE ---
@@ -162,7 +179,7 @@ const MyRewards = () => {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">My Rewards</h1>
+          <h1 className="text-3xl font-extrabold text-surface-900 tracking-tight">My Rewards</h1>
           <p className="text-gray-500 mt-1 font-medium">View your impact and donor status</p>
         </div>
         <Link
@@ -178,7 +195,7 @@ const MyRewards = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden"
+        className="bg-white shadow-soft rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50 blur-2xl"></div>
         
@@ -205,7 +222,7 @@ const MyRewards = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-end text-sm">
                   <span className="font-bold text-gray-700">Next Tier: {nextTier.name}</span>
-                  <span className="font-black text-primary-600">{progress.toFixed(0)}%</span>
+                  <span className="font-black text-primary-500 font-black">{progress.toFixed(0)}%</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3 border border-gray-50 shadow-inner overflow-hidden">
                   <motion.div
@@ -335,15 +352,54 @@ const MyRewards = () => {
             </table>
           </div>
 
-          <div className="py-5 bg-gray-50/20 text-center border-t border-gray-50">
-             <Link 
-               to="/transactions" 
-               className="text-[13px] font-bold text-gray-500 hover:text-primary-600 transition-colors flex items-center justify-center gap-1 group"
-             >
-               View all transactions 
-               <span className="text-lg group-hover:translate-x-1 transition-transform">›</span>
-             </Link>
-          </div>
+          {/* Pagination Controls */}
+          {pagination && (
+            <div className="py-6 px-8 bg-gray-50/20 border-t border-gray-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600 font-medium">
+                  Showing {((currentPage - 1) * transactionsPerPage) + 1} to{' '}
+                  {Math.min(currentPage * transactionsPerPage, pagination.totalTransactions)} of{' '}
+                  {pagination.totalTransactions} transactions
+                </div>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={!pagination.hasPrevPage || pagination.totalPages <= 1}
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-white hover:text-primary-600 hover:border-primary-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-white shadow-sm flex items-center gap-2"
+                  >
+                    <FiChevronLeft className="w-4 h-4" />
+                    Previous
+                  </button>
+                  
+                  <span className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-50 rounded-xl border border-gray-200">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    disabled={!pagination.hasNextPage || pagination.totalPages <= 1}
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-white hover:text-primary-600 hover:border-primary-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-white shadow-sm flex items-center gap-2"
+                  >
+                    Next
+                    <FiChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Show link only if no pagination data (backward compatibility) */}
+          {!pagination && recentTransactions && recentTransactions.length > 0 && (
+            <div className="py-5 bg-gray-50/20 text-center border-t border-gray-50">
+              <Link 
+                to="/transactions" 
+                className="text-[13px] font-bold text-gray-500 hover:text-primary-500 font-black transition-colors flex items-center justify-center gap-1 group"
+              >
+                View all transactions 
+                <span className="text-lg group-hover:translate-x-1 transition-transform">›</span>
+              </Link>
+            </div>
+          )}
         </motion.div>
       )}
     </div>
