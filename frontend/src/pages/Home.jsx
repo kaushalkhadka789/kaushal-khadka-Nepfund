@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import SuccessStories from '../components/SuccessStories';
 import HowItWorks from '../components/HowItWorks';
+import FAQ from '../components/FAQ';
 import CampaignCard from '../components/CampaignCard';
 
 // category data with icons
@@ -317,7 +318,11 @@ const Home = () => {
                   </span>
                   URGENT CAUSES
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Needs Immediate Attention</h2>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-violet-600 to-rose-600">
+                    Needs Immediate Attention
+                  </span>
+                </h2>
               </div>
               <Link
                 to="/urgent-campaigns"
@@ -525,6 +530,7 @@ const Home = () => {
 
       <HowItWorks />
       <SuccessStories />
+      <FAQ />
 
       {/* STATS SECTION */}
       <div className="py-16 bg-primary-900 text-white mt-16">

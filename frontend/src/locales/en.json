@@ -182,5 +182,15 @@
   "forgot.verify": "Verify OTP",
   "forgot.newPasswordPlaceholder": "Enter new password",
   "forgot.reset": "Reset Password",
-  "forgot.resetting": "Resetting..."
+  "forgot.resetting": "Resetting...",
+  "faq.title": "Frequently Asked Questions",
+  "faq.subtitle": "Quick answers to common questions about our platform.",
+  "faq.questions.safety": "Is NepFund safe?",
+  "faq.answers.safety": "Yes, NepFund is completely safe and secure. We use industry-standard encryption to protect all transactions and personal information. All campaigns go through a verification process before being published, and we work with trusted payment partners to ensure your donations are processed securely.",
+  "faq.questions.fees": "What are the platform fees?",
+  "faq.answers.fees": "NepFund charges a small platform fee to cover payment processing and operational costs. The exact fee structure is transparent and clearly displayed when you create a campaign or make a donation. Most of your contribution goes directly to the cause you're supporting.",
+  "faq.questions.anonymous": "Can I donate anonymously?",
+  "faq.answers.anonymous": "Yes, you can choose to donate anonymously when making a contribution. Your donation will still be counted towards the campaign goal, but your name and details will not be publicly displayed. The campaign organizer will still receive a notification of your support.",
+  "faq.questions.withdraw": "How fast can I withdraw funds?",
+  "faq.answers.withdraw": "Fund withdrawal typically takes 2-5 business days after your withdrawal request is approved. We verify all withdrawal requests to ensure funds are being transferred to verified bank accounts or authorized institutions. You can request withdrawals directly from your campaign dashboard once you've raised funds."
 }

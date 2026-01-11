@@ -23,8 +23,10 @@ const SuccessStories = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {t('successStories.title')}
+            <h2 className="text-3xl font-bold mb-2">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-violet-600 to-rose-600">
+                {t('successStories.title')}
+              </span>
             </h2>
             <p className="text-gray-600 max-w-2xl">
               {t('successStories.subtitle')}
