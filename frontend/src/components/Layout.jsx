@@ -5,11 +5,10 @@ import { logout } from '../store/authSlice';
 import {
   FiUser, FiLogOut, FiPlusCircle, FiGrid, FiHeart,
   FiAward, FiMail, FiPhone, FiShield, FiChevronDown,
-  FiMenu, FiX, FiGlobe
+  FiMenu, FiX, FiGlobe, FiInfo
 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion'; // Animation library
-import TierBadge from './TierBadge';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getTier } from '../utils/reward.utils.js';
 
 const Layout = ({ children }) => {
@@ -120,6 +119,17 @@ const Layout = ({ children }) => {
                     {link.label}
                   </Link>
                 ))}
+                
+                {/* About link - visible only when authenticated */}
+                <Link
+                  to="/about"
+                  className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 group overflow-hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 ${
+                    location.pathname === '/about' ? 'text-primary-600 bg-primary-50' : ''
+                  }`}
+                >
+                  <FiInfo className="w-4 h-4 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
+                  {t('nav.about')}
+                </Link>
               </div>
             )}
 
@@ -248,6 +258,18 @@ const Layout = ({ children }) => {
                     {link.label}
                   </Link>
                 ))}
+                
+                {/* About link in mobile menu - Kept at bottom */}
+                <Link
+                  to="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                >
+                  <div className="p-2 rounded-lg bg-gray-100 text-gray-500">
+                    <FiInfo className="w-5 h-5" />
+                  </div>
+                  {t('nav.about')}
+                </Link>
               </div>
             </motion.div>
           )}
@@ -283,7 +305,7 @@ const Layout = ({ children }) => {
                 {/* Social Placeholders */}
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
-                     <span className="w-2 h-2 bg-white/50 rounded-full" />
+                      <span className="w-2 h-2 bg-white/50 rounded-full" />
                   </div>
                 ))}
               </div>
@@ -327,12 +349,12 @@ const Layout = ({ children }) => {
               <h3 className="text-white font-semibold mb-2">{t('footer.ctaTitle')}</h3>
               <p className="text-slate-400 text-xs mb-4">{t('footer.trust')}</p>
               <div className="space-y-3">
-                 <Link to="/create-campaign" className="block w-full text-center py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium transition-colors">
-                   {t('footer.ctaLaunch')}
-                 </Link>
-                 <Link to="/" className="block w-full text-center py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors">
-                   {t('footer.ctaDonate')}
-                 </Link>
+                  <Link to="/create-campaign" className="block w-full text-center py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium transition-colors">
+                    {t('footer.ctaLaunch')}
+                  </Link>
+                  <Link to="/" className="block w-full text-center py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors">
+                    {t('footer.ctaDonate')}
+                  </Link>
               </div>
             </div>
           </div>

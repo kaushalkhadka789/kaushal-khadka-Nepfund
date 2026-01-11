@@ -549,3 +549,43 @@ export const getSuccessStory = async (req, res) => {
   }
 };
 
+// @desc    Get public stats
+// @route   GET /api/campaigns/stats
+// @access  Public
+export const getPublicStats = async (req, res) => {
+  try {
+    const approvedCampaigns = await Campaign.countDocuments({ status: 'approved' });
+    const totalDonors = await Donation.distinct('donor').then(donors => donors.length);
+
+    const totalDonations = await Donation.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        campaigns: {
+          approved: approvedCampaigns
+        },
+        users: {
+          donors: totalDonors
+        },
+        donations: {
+          total: totalDonations[0]?.total || 0,
+          count: totalDonations[0]?.count || 0
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

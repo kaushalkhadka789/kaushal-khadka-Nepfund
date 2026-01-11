@@ -25,6 +25,7 @@ import SuccessStoryPage from './pages/SuccessStoryPage';
 import UrgentCampaigns from './pages/UrgentCampaigns';
 import MyRewards from './pages/MyRewards';
 import TopDonors from './pages/TopDonors';
+import About from './pages/About';
 
 function App() {
   const dispatch = useDispatch();
@@ -59,6 +60,7 @@ function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

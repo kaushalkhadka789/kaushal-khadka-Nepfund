@@ -81,6 +81,10 @@ export const campaignApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Campaign'],
     }),
+    getPublicStats: builder.query({
+      query: () => '/campaigns/stats',
+      providesTags: ['Campaign', 'Donation'],
+    }),
     getSuccessStories: builder.query({
       query: (params = {}) => ({
         url: '/success-stories',
@@ -282,6 +286,7 @@ export const {
   useGetSuccessStoriesQuery,
   useGetSuccessStoryQuery,
   useGetCampaignQuery,
+  useGetPublicStatsQuery,
   useCreateCampaignMutation,
   useUpdateCampaignMutation,
   useDeleteCampaignMutation,

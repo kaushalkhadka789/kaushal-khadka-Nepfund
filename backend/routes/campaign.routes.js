@@ -11,7 +11,8 @@ import {
   deleteCampaign,
   addComment,
   addUpdate,
-  getMyCampaigns
+  getMyCampaigns,
+  getPublicStats
 } from '../controllers/campaign.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -68,6 +69,7 @@ const campaignValidation = [
 ];
 
 router.get('/', getCampaigns);
+router.get('/stats', getPublicStats);
 router.get('/my-campaigns', protect, getMyCampaigns);
 router.get('/:id', getCampaign);
 router.post('/', protect, upload.fields([
