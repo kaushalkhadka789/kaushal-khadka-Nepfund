@@ -11,7 +11,6 @@ const CampaignCard = ({ campaign, variant = 'grid', showDonateButton = false }) 
     ? `http://localhost:5000/${campaign.images[0]}` 
     : 'https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?auto=format&fit=crop&q=80&w=800';
 
-  // Horizontal variant (featured card) - Matching the exact design from image
   if (variant === 'horizontal') {
     return (
       <Link to={`/campaign/${campaign._id}`} className="group block">

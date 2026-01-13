@@ -82,6 +82,18 @@ const About = () => {
   const yHero = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const opacityHero = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
+  // Scroll to contact section if hash is present
+  useEffect(() => {
+    if (window.location.hash === '#contact') {
+      setTimeout(() => {
+        const element = document.getElementById('contact');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, []);
+
   // Fetch real stats
   const { data: statsData } = useGetPublicStatsQuery();
 
@@ -381,7 +393,7 @@ const About = () => {
       </section>
 
       {/* --- PROFESSIONAL CONTACT US SECTION --- */}
-      <section className="relative py-24 bg-slate-900 overflow-hidden">
+      <section id="contact" className="relative py-24 bg-slate-900 overflow-hidden scroll-mt-20">
         {/* Abstract Background Shapes */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-primary-600 rounded-full blur-[128px] opacity-20"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-violet-600 rounded-full blur-[128px] opacity-20"></div>
