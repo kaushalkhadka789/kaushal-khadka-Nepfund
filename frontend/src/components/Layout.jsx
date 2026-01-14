@@ -305,7 +305,7 @@ const Layout = ({ children }) => {
                 {/* Social Placeholders */}
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
-                      <span className="w-2 h-2 bg-white/50 rounded-full" />
+                     <span className="w-2 h-2 bg-white/50 rounded-full" />
                   </div>
                 ))}
               </div>
@@ -349,12 +349,12 @@ const Layout = ({ children }) => {
               <h3 className="text-white font-semibold mb-2">{t('footer.ctaTitle')}</h3>
               <p className="text-slate-400 text-xs mb-4">{t('footer.trust')}</p>
               <div className="space-y-3">
-                  <Link to="/create-campaign" className="block w-full text-center py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium transition-colors">
-                    {t('footer.ctaLaunch')}
-                  </Link>
-                  <Link to="/" className="block w-full text-center py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors">
-                    {t('footer.ctaDonate')}
-                  </Link>
+                 <Link to="/create-campaign" className="block w-full text-center py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium transition-colors">
+                   {t('footer.ctaLaunch')}
+                 </Link>
+                 <Link to="/" className="block w-full text-center py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors">
+                   {t('footer.ctaDonate')}
+                 </Link>
               </div>
             </div>
           </div>

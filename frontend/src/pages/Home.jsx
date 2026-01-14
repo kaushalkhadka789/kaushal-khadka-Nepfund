@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useGetCampaignsQuery } from '../services/api';
+import { useGetCampaignsQuery, useGetPublicStatsQuery } from '../services/api';
 import { 
   FiSearch, FiZap, FiChevronLeft, FiChevronRight, FiArrowRight, 
   FiFilter, FiActivity, FiTrendingUp 
@@ -100,7 +100,7 @@ const Home = () => {
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
-
+  
   // Queries
   const { data, isLoading, error, refetch } = useGetCampaignsQuery({
     status: 'approved',
@@ -123,7 +123,7 @@ const Home = () => {
     // If not searching/filtering, exclude urgent from main list to avoid duplication
     // If searching, show everything matching
     if (!search && !category) {
-        return all.filter(c => !c.isUrgent).slice(0, 6);
+        return all.filter(c => !c.isUrgent).slice(0, 4);
     }
     return all;
   }, [data, search, category]);
@@ -152,7 +152,7 @@ const Home = () => {
     if (socket) {
       socket.on('campaign:approved', () => { refetch(); });
       socket.on('campaign:updated', () => { refetch(); });
-    }
+      }
     return () => {
       if (socket) {
         socket.off('campaign:approved');
@@ -161,11 +161,15 @@ const Home = () => {
     };
   }, [refetch]);
 
-  // Total stats calculation (mocked based on loaded data for visual demo)
+  // Public stats from backend (fallbacks to derived data if unavailable)
+  const { data: statsData } = useGetPublicStatsQuery();
+
   const stats = {
-    active: data?.total || 120,
-    raised: (homeCampaigns.reduce((sum, c) => sum + (c.raisedAmount || 0), 0) * 1.5), // Multiplier for demo scale
-    donors: (homeCampaigns.reduce((sum, c) => sum + (c.donorCount || 0), 0) * 2)
+    active: statsData?.data?.campaigns?.approved ?? data?.total ?? 0,
+    raised: statsData?.data?.donations?.total ??
+      homeCampaigns.reduce((sum, c) => sum + (c.raisedAmount || 0), 0),
+    donors: statsData?.data?.users?.donors ??
+      homeCampaigns.reduce((sum, c) => sum + (c.donorCount || 0), 0),
   };
 
   return (
@@ -179,25 +183,25 @@ const Home = () => {
       >
         {/* Carousel Background */}
         <AnimatePresence initial={false}>
-          <motion.div
+              <motion.div
             key={currentSlide}
             initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
             transition={{ duration: 1.2 }}
-            className="absolute inset-0 z-0"
-          >
+                className="absolute inset-0 z-0"
+              >
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-10" />
-            <img 
+                <img
               src={HERO_IMAGES[currentSlide]} 
-              alt="Hero" 
-              className="w-full h-full object-cover"
+                  alt="Hero"
+                  className="w-full h-full object-cover"
               onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80'; }} 
-            />
-          </motion.div>
+                />
+              </motion.div>
         </AnimatePresence>
-
+        
         {/* Hero Content */}
         <div className="relative z-20 h-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <motion.div 
@@ -231,7 +235,7 @@ const Home = () => {
             </motion.div>
           </motion.div>
         </div>
-
+        
         {/* Carousel Controls */}
         <button onClick={() => changeSlide('prev')} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-4 rounded-full bg-black/20 hover:bg-white/20 backdrop-blur-sm text-white border border-white/10 transition-all">
           <FiChevronLeft size={24} />
@@ -320,7 +324,7 @@ const Home = () => {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Link to={`/campaign/${campaign._id}`} className="block group h-full">
-                      <div className="h-full bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-red-900/10 transition-all duration-300 border border-gray-100 flex flex-col">
+                      <div className="h-full bg-white overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-red-900/10 transition-all duration-300 border border-gray-100 flex flex-col">
                         <div className="relative h-56 overflow-hidden">
                           {campaign.images?.[0] ? (
                             <img src={`http://localhost:5000/${campaign.images[0]}`} alt={campaign.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -334,16 +338,16 @@ const Home = () => {
                         <div className="p-6 flex flex-col flex-1">
                            <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">{campaign.title}</h3>
                            <p className="text-gray-500 text-sm line-clamp-2 mb-4">{campaign.description}</p>
-                           
+
                            <div className="mt-auto pt-4 border-t border-gray-50">
                               <div className="flex justify-between text-sm font-semibold mb-2">
                                 <span className="text-gray-900">Rs. {campaign.raisedAmount?.toLocaleString()}</span>
                                 <span className="text-gray-400">of Rs. {campaign.goalAmount?.toLocaleString()}</span>
-                              </div>
+                            </div>
                               <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                 <div className="bg-gradient-to-r from-red-500 to-pink-600 h-full rounded-full" style={{ width: `${Math.min((campaign.raisedAmount/campaign.goalAmount)*100, 100)}%` }} />
-                              </div>
-                           </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </Link>
@@ -361,52 +365,52 @@ const Home = () => {
            <h2 className="text-3xl font-bold text-gray-900">Discover Campaigns</h2>
            <p className="text-gray-500 mt-2">Find a cause that resonates with you</p>
         </div>
-
+        
         {/* Floating Filter Bar */}
         <div className="sticky top-4 z-40 bg-white/80 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-lg p-3 mb-12 max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row gap-3">
-             <div className="flex-1 relative">
+            <div className="flex-1 relative">
                 <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input 
-                  type="text" 
+              <input
+                type="text"
                   placeholder="Search campaigns..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 hover:bg-white focus:bg-white border border-transparent focus:border-primary-300 rounded-xl outline-none transition-all text-gray-700 placeholder-gray-400"
-                />
-             </div>
+              />
+            </div>
              <div className="flex gap-3">
                <div className="relative min-w-[160px]">
                  <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-4" />
-                 <select 
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
                     className="w-full pl-9 pr-8 py-2.5 bg-gray-50/50 hover:bg-white border border-transparent focus:border-primary-300 rounded-xl outline-none appearance-none cursor-pointer text-sm font-medium text-gray-700"
-                 >
+              >
                     <option value="createdAt">Newest First</option>
                     <option value="raisedAmount">Most Funded</option>
                     <option value="donorCount">Most Popular</option>
-                 </select>
+              </select>
                </div>
-             </div>
+            </div>
           </div>
         </div>
 
         {/* Categories Rail */}
         <div className="mb-12 relative group">
            <div className="flex space-x-3 overflow-x-auto pb-4 scrollbar-hide px-2 snap-x">
-             <button
+              <button
                 onClick={() => setCategory('')}
                 className={`flex-shrink-0 snap-start px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-300 ${
                   category === '' 
                   ? 'bg-gray-900 text-white border-gray-900 shadow-lg scale-105' 
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
-             >
+              >
                 All Causes
-             </button>
+              </button>
              {CATEGORIES.map((cat) => (
-               <button
+                <button
                   key={cat.key}
                   onClick={() => setCategory(cat.label)}
                   className={`flex-shrink-0 snap-start flex items-center gap-2 px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-300 ${
@@ -414,12 +418,12 @@ const Home = () => {
                     ? 'bg-primary-600 text-white border-primary-600 shadow-lg scale-105'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:text-primary-600 hover:bg-primary-50'
                   }`}
-               >
+                >
                   <span>{cat.icon}</span>
                   {cat.label}
-               </button>
-             ))}
-           </div>
+                </button>
+              ))}
+            </div>
            {/* Fade edges */}
            <div className="absolute right-0 top-0 bottom-4 w-24 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none md:hidden" />
         </div>
@@ -447,20 +451,20 @@ const Home = () => {
            <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-300">
              <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                <FiSearch className="text-gray-400 size-8" />
-             </div>
+          </div>
              <h3 className="text-xl font-bold text-gray-900">No campaigns found</h3>
              <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
-           </div>
+          </div>
         ) : (
           <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
-             {homeCampaigns.map((campaign) => (
-               <CampaignCard 
-                 key={campaign._id} 
-                 campaign={campaign} 
-                 variant="grid"
-                 showDonateButton={false}
-               />
-             ))}
+            {homeCampaigns.map((campaign) => (
+              <CampaignCard 
+                key={campaign._id} 
+                campaign={campaign} 
+                variant="grid"
+                showDonateButton={false}
+              />
+            ))}
           </motion.div>
         )}
         
@@ -479,12 +483,12 @@ const Home = () => {
       </div>
 
       <div className="bg-gray-50 py-10">
-        <SuccessStories />
-      </div>
+      <SuccessStories />
+              </div>
 
       <div className="bg-white">
         <FAQ />
-      </div>
+            </div>
 
       {/* --- FOOTER CTA --- */}
       <section className="py-20 bg-gray-900 text-white relative overflow-hidden">
@@ -502,7 +506,7 @@ const Home = () => {
                  Contact Support
                </Link>
             </div>
-         </div>
+          </div>
       </section>
     </div>
   );

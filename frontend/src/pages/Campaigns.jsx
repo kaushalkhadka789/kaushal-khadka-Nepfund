@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useGetCampaignsQuery } from '../services/api';
-import { FiSearch, FiHeart, FiClock, FiTrendingUp, FiAlertCircle, FiFilter } from 'react-icons/fi';
+import {
+  FiSearch,
+  FiHeart,
+  FiClock,
+  FiTrendingUp,
+  FiAlertCircle,
+  FiFilter
+} from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Constant for image base URL
 const BASE_URL = 'http://localhost:5000/';
 
-// --- Sub-Component: Loading Skeleton ---
+/* ==================== Loading Skeleton ==================== */
 const CampaignSkeleton = () => (
-  <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+  <div className="bg-white overflow-hidden shadow-sm border border-gray-100">
     <div className="h-56 bg-gray-200 animate-pulse" />
     <div className="p-5 space-y-4">
       <div className="flex gap-2">
@@ -27,11 +33,18 @@ const CampaignSkeleton = () => (
   </div>
 );
 
-// --- Sub-Component: Campaign Card ---
+/* ==================== Campaign Card ==================== */
 const CampaignCard = ({ campaign, index }) => {
-  const progress = Math.min(((campaign.raisedAmount / campaign.goalAmount) * 100), 100).toFixed(1);
-  const daysLeft = Math.ceil((new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24));
-  const isUrgent = campaign.isUrgent || daysLeft < 5; // Example logic for urgency
+  const progress = Math.min(
+    (campaign.raisedAmount / campaign.goalAmount) * 100,
+    100
+  ).toFixed(1);
+
+  const daysLeft = Math.ceil(
+    (new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24)
+  );
+
+  const isUrgent = campaign.isUrgent || daysLeft < 5;
 
   return (
     <motion.div
@@ -39,10 +52,19 @@ const CampaignCard = ({ campaign, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       whileHover={{ y: -5 }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300 flex flex-col h-full"
+      className="
+        group
+        bg-white
+        overflow-hidden
+        shadow-sm
+        hover:shadow-xl
+        border border-gray-100
+        transition-all duration-300
+        flex flex-col
+        h-full
+      "
     >
       <Link to={`/campaign/${campaign._id}`} className="block relative h-56 overflow-hidden">
-        {/* Image */}
         {campaign.images?.length ? (
           <img
             src={`${BASE_URL}${campaign.images[0]}`}
@@ -55,15 +77,14 @@ const CampaignCard = ({ campaign, index }) => {
           </div>
         )}
 
-        {/* Overlays */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-           <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-gray-700 text-xs font-bold rounded-full shadow-sm uppercase tracking-wide">
+        <div className="absolute top-3 left-3 flex gap-2">
+          <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-gray-700 text-xs font-bold rounded-full shadow-sm uppercase tracking-wide">
             {campaign.category}
           </span>
         </div>
-        
+
         {isUrgent && (
-           <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3">
             <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm flex items-center gap-1 animate-pulse">
               <FiAlertCircle /> Urgent
             </span>
@@ -74,7 +95,7 @@ const CampaignCard = ({ campaign, index }) => {
       </Link>
 
       <div className="p-5 flex flex-col flex-1">
-        <Link to={`/campaign/${campaign._id}`} className="block">
+        <Link to={`/campaign/${campaign._id}`}>
           <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-primary-600 transition-colors">
             {campaign.title}
           </h3>
@@ -84,7 +105,6 @@ const CampaignCard = ({ campaign, index }) => {
         </Link>
 
         <div className="mt-auto">
-          {/* Progress Bar */}
           <div className="mb-2 flex justify-between items-end">
             <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
               {progress}% Raised
@@ -93,26 +113,31 @@ const CampaignCard = ({ campaign, index }) => {
               रु {campaign.raisedAmount?.toLocaleString()}
             </span>
           </div>
-          
+
           <div className="w-full bg-gray-100 rounded-full h-2.5 mb-4 overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full rounded-full ${isUrgent ? 'bg-gradient-to-r from-red-500 to-pink-600' : 'bg-gradient-to-r from-primary-500 to-primary-600'}`}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className={`h-full rounded-full ${
+                isUrgent
+                  ? 'bg-gradient-to-r from-red-500 to-pink-600'
+                  : 'bg-gradient-to-r from-primary-500 to-primary-600'
+              }`}
             />
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <FiClock className={`${daysLeft < 3 ? 'text-red-500' : ''}`} />
+              <FiClock className={daysLeft < 3 ? 'text-red-500' : ''} />
               <span className={daysLeft < 3 ? 'text-red-600 font-medium' : ''}>
                 {daysLeft > 0 ? `${daysLeft} Days Left` : 'Ended'}
               </span>
             </div>
+
             <div className="flex items-center gap-1 text-gray-500 text-sm">
               <FiTrendingUp className="text-green-500" />
-              <span>{campaign.donorCount || 0} Donors</span> 
+              <span>{campaign.donorCount || 0} Donors</span>
             </div>
           </div>
         </div>
@@ -121,22 +146,21 @@ const CampaignCard = ({ campaign, index }) => {
   );
 };
 
-// --- Main Component ---
+/* ==================== Main Component ==================== */
 const Campaigns = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Debounce search to prevent too many API calls
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { data, isLoading, error } = useGetCampaignsQuery({ 
-    status: 'approved', 
-    search: debouncedSearch || undefined, 
-    sortBy: 'createdAt', 
-    limit: 24 
+  const { data, isLoading, error } = useGetCampaignsQuery({
+    status: 'approved',
+    search: debouncedSearch || undefined,
+    sortBy: 'createdAt',
+    limit: 24
   });
   
   const campaigns = data?.data || [];

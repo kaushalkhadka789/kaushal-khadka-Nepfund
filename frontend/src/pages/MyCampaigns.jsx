@@ -98,7 +98,7 @@ const MyCampaigns = () => {
                   hidden: { opacity: 0, y: 10 },
                   visible: { opacity: 1, y: 0 }
                 }}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
+                className="group bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
               >
                 {/* Compact Image - Height reduced to h-40 */}
                 <div className="relative h-40 w-full overflow-hidden bg-gray-100">
