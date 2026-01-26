@@ -44,7 +44,6 @@ function App() {
   });
 
   // Sync with backend when getMe succeeds (optional background sync)
-  // This updates Redux with any server-side changes, but doesn't block initial render
   useEffect(() => {
     if (isSuccess && data?.user && token) {
       // Only update if we have valid data from backend
