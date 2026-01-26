@@ -150,8 +150,9 @@ const PaymentSuccess = () => {
         hasProcessed.current = true;
         setCampaignId(campaignIdParam);
         setVerifying(true);
-        // Use refId as oid if oid is not available (refId is the transaction identifier)
+
         const oidToUse = esewaOid || esewaRefId;
+        console.log('eSewa callback processing:', { oid: esewaOid, refId: esewaRefId, amount: esewaAmount, oidToUse });
         verifyAndCreateDonation(oidToUse, campaignIdParam, 'esewa', { refId: esewaRefId, amount: esewaAmount });
       } else {
         // Log what we have for debugging
