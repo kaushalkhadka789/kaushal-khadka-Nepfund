@@ -26,6 +26,9 @@ import UrgentCampaigns from './pages/UrgentCampaigns';
 import MyRewards from './pages/MyRewards';
 import TopDonors from './pages/TopDonors';
 import About from './pages/About';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookiePolicy from './pages/CookiePolicy';
 
 function App() {
   const dispatch = useDispatch();
@@ -124,6 +127,9 @@ function App() {
           }
         />
         <Route path="/top-donors" element={<TopDonors />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
         <Route
           path="/admin/dashboard"
           element={
