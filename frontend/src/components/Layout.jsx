@@ -5,25 +5,38 @@ import { logout } from '../store/authSlice';
 import {
   FiUser, FiLogOut, FiPlusCircle, FiGrid, FiHeart,
   FiAward, FiMail, FiPhone, FiShield, FiChevronDown,
-  FiMenu, FiX, FiGlobe, FiInfo
+  FiMenu, FiX, FiGlobe, FiInfo, FiArrowUp, FiFacebook, 
+  FiTwitter, FiLinkedin, FiInstagram, FiSend
 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getTier } from '../utils/reward.utils.js';
+import CookieConsent from './CookieConsent';
+import CookiePreferences from './CookiePreferences';
 
 const Layout = ({ children }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  
+   
   // State
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  const [isCookiePreferencesOpen, setIsCookiePreferencesOpen] = useState(false);
+   
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+
+  // Listen for custom event to open cookie preferences
+  useEffect(() => {
+    const handleOpenPreferences = () => {
+      setIsCookiePreferencesOpen(true);
+    };
+    window.addEventListener('openCookiePreferences', handleOpenPreferences);
+    return () => window.removeEventListener('openCookiePreferences', handleOpenPreferences);
+  }, []);
 
   // Handle Scroll Effect
   useEffect(() => {
@@ -52,6 +65,10 @@ const Layout = ({ children }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const userPoints = user?.rewardPoints || 0;
   const userTier = userPoints > 0 ? getTier(userPoints) : null;
 
@@ -68,7 +85,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden selection:bg-primary-100 selection:text-primary-900">
-      
+       
       {/* --- DECORATIVE BACKGROUND BLOBS --- */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl mix-blend-multiply filter opacity-70 animate-blob" />
@@ -119,7 +136,7 @@ const Layout = ({ children }) => {
                     {link.label}
                   </Link>
                 ))}
-                
+                 
                 {/* About link - visible only when authenticated */}
                 <Link
                   to="/about"
@@ -135,7 +152,7 @@ const Layout = ({ children }) => {
 
             {/* RIGHT ACTIONS */}
             <div className="flex items-center gap-3 sm:gap-4">
-              
+               
               {/* Language Switcher */}
               <button
                 onClick={() => {
@@ -162,7 +179,7 @@ const Layout = ({ children }) => {
                         <span className="text-xs font-bold text-gray-700 leading-tight">{user?.name}</span>
                         {userTier && <span className="text-[10px] text-primary-600 font-medium">{userTier.name}</span>}
                       </div>
-                      
+                       
                       {user?.profileImage ? (
                         <img
                           src={`http://localhost:5000/${user.profileImage}`}
@@ -258,8 +275,7 @@ const Layout = ({ children }) => {
                     {link.label}
                   </Link>
                 ))}
-                
-                {/* About link in mobile menu - Kept at bottom */}
+                 
                 <Link
                   to="/about"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -281,93 +297,190 @@ const Layout = ({ children }) => {
         {children}
       </main>
 
-      {/* --- FOOTER --- */}
-      <footer className="relative bg-slate-950 text-white mt-24 overflow-hidden">
-        {/* Background Overlay */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/90 to-slate-900/80" />
-        </div>
+      {/* --- PROFESSIONAL FOOTER --- */}
+      {/* Changed to bg-gray-900 for a TRUE Neutral Grey look (removes blue tint) */}
+      <footer className="relative bg-gray-900 text-white mt-24">
+        {/* Subtle Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-gray-900/50 to-transparent pointer-events-none" />
+         
+        {/* Scroll To Top Button */}
+        <AnimatePresence>
+          {isScrolled && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0 }}
+              onClick={scrollToTop}
+              className="fixed bottom-8 right-8 z-40 p-3 bg-primary-600 text-white rounded-full shadow-lg shadow-primary-900/50 hover:bg-primary-500 transition-all duration-300 group"
+              aria-label="Scroll to top"
+            >
+              <FiArrowUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-            
-            {/* Brand Column */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg opacity-90" />
-                <span className="text-xl font-bold tracking-tight">{t('app.name')}</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                {t('footer.description')}
-              </p>
-              <div className="flex gap-4 pt-2">
-                {/* Social Placeholders */}
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
-                     <span className="w-2 h-2 bg-white/50 rounded-full" />
-                  </div>
-                ))}
-              </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Newsletter Section - Top Bar */}
+            <div className="pt-16 pb-12 border-b border-gray-800">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="max-w-xl text-center md:text-left">
+                        <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Join our community</h3>
+                        <p className="mt-2 text-gray-400 text-sm">Stay inspired with weekly updates on impactful campaigns and success stories.</p>
+                    </div>
+                    <div className="w-full md:w-auto">
+                        <form className="flex w-full md:w-96 relative group" onSubmit={(e) => e.preventDefault()}>
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FiMail className="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors" />
+                            </div>
+                            {/* Updated input background to gray-800 */}
+                            <input 
+                                type="email" 
+                                placeholder="Enter your email" 
+                                className="block w-full pl-10 pr-12 py-3 border border-gray-700 rounded-xl leading-5 bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:bg-gray-800/80 focus:ring-2 focus:ring-primary-600 focus:border-primary-600 sm:text-sm transition-all duration-300"
+                            />
+                            {/* Updated button background to gray-700 */}
+                            <button type="submit" className="absolute inset-y-1 right-1 px-4 bg-gray-700 hover:bg-primary-600 text-gray-300 hover:text-white rounded-lg transition-all duration-300">
+                                <FiSend className="w-4 h-4" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            {/* Quick Links */}
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-primary-400 mb-6">{t('footer.quickLinks')}</h3>
-              <ul className="space-y-3">
-                {[
-                  { to: '/create-campaign', label: t('nav.create') },
-                  { to: '/my-campaigns', label: t('nav.myCampaigns') },
-                  { to: '/my-donations', label: t('nav.myDonations') },
-                ].map((link) => (
-                  <li key={link.to}>
-                    <Link to={link.to} className="text-slate-400 hover:text-white hover:translate-x-1 transition-all inline-block text-sm">
-                      {link.label}
+            {/* Main Footer Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 py-16">
+                 
+                {/* Column 1: Brand (4 cols) */}
+                <div className="lg:col-span-4 space-y-6">
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <div className="bg-white/10 p-2 rounded-lg group-hover:bg-white/20 transition-colors">
+                            <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded opacity-90" />
+                        </div>
+                        <span className="text-2xl font-bold tracking-tight text-white">{t('app.name')}</span>
                     </Link>
-                  </li>
-                ))}
-              </ul>
+                    <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
+                        Empowering dreams through community support. We bridge the gap between visionaries and contributors to create lasting impact across Nepal.
+                    </p>
+                    <div className="flex gap-4">
+                        {[
+                          { icon: FiFacebook, color: 'hover:bg-[#1877F2]' }, 
+                          { icon: FiTwitter, color: 'hover:bg-[#1DA1F2]' }, 
+                          { icon: FiInstagram, color: 'hover:bg-[#E4405F]' }, 
+                          { icon: FiLinkedin, color: 'hover:bg-[#0A66C2]' }
+                        ].map((social, i) => (
+                            <a key={i} href="#" className={`w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 ${social.color} hover:-translate-y-1`}>
+                                <social.icon className="w-5 h-5" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Column 2: Platform (2 cols) */}
+                <div className="lg:col-span-2">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6">Platform</h4>
+                    <ul className="space-y-4">
+                        {[
+                          { to: '/create-campaign', label: 'Start Fundraising' },
+                          { to: '/', label: 'Browse Campaigns' },
+                          { to: '/my-rewards', label: 'Reward Program' },
+                          { to: '/about', label: 'How it Works' }
+                        ].map((link) => (
+                            <li key={link.label}>
+                                <Link to={link.to} className="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center text-sm">
+                                    <span className="w-1.5 h-1.5 bg-primary-600 rounded-full opacity-0 hover:opacity-100 transition-opacity mr-2" />
+                                    {link.label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Column 3: Support (2 cols) */}
+                <div className="lg:col-span-2">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6">Support</h4>
+                    <ul className="space-y-4">
+                        {[
+                          { to: '#', label: 'Help Center' },
+                          { to: '#', label: 'Safety & Trust' },
+                          { to: '#', label: 'Community Guidelines' },
+                          { to: '#', label: 'Success Stories' }
+                        ].map((link) => (
+                            <li key={link.label}>
+                                <Link to={link.to} className="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center text-sm">
+                                    <span className="w-1.5 h-1.5 bg-primary-600 rounded-full opacity-0 hover:opacity-100 transition-opacity mr-2" />
+                                    {link.label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Column 4: Contact (4 cols) */}
+                <div className="lg:col-span-4">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6">Contact Us</h4>
+                    {/* Updated card background to gray-800/50 */}
+                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
+                        <ul className="space-y-5">
+                            <li className="flex items-start gap-4">
+                                <div className="p-2 bg-gray-700 rounded-lg text-primary-500">
+                                    <FiMail className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 uppercase font-semibold">Email us</p>
+                                    <a href="mailto:support@nepfund.org" className="text-sm text-white hover:text-primary-400 transition-colors">support@nepfund.org</a>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-4">
+                                <div className="p-2 bg-gray-700 rounded-lg text-primary-500">
+                                    <FiPhone className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 uppercase font-semibold">Call us</p>
+                                    <p className="text-sm text-white">+977 1-4455667</p>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-4">
+                                <div className="p-2 bg-gray-700 rounded-lg text-primary-500">
+                                    <FiGrid className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 uppercase font-semibold">Headquarters</p>
+                                    <p className="text-sm text-white">Kathmandu, Nepal</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
-            {/* Contact */}
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-primary-400 mb-6">{t('footer.contactTitle')}</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3 text-sm text-slate-400">
-                  <FiMail className="w-5 h-5 mt-0.5 text-slate-500" />
-                  <a href="mailto:support@nepfund.org" className="hover:text-white transition-colors">support@nepfund.org</a>
-                </li>
-                <li className="flex items-start gap-3 text-sm text-slate-400">
-                  <FiPhone className="w-5 h-5 mt-0.5 text-slate-500" />
-                  <span>+977 1234567890</span>
-                </li>
-              </ul>
+            {/* Bottom Bar */}
+            <div className="border-t border-gray-800 py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+                <p className="text-gray-500">
+                    © {new Date().getFullYear()} {t('app.name')}. All rights reserved.
+                </p>
+                <div className="flex flex-wrap justify-center gap-8">
+                    <Link to="/privacy-policy" className="text-gray-500 hover:text-white transition-colors">
+                        Privacy Policy
+                    </Link>
+                    <Link to="/terms-of-service" className="text-gray-500 hover:text-white transition-colors">
+                        Terms of Service
+                    </Link>
+                    <Link to="/cookie-policy" className="text-gray-500 hover:text-white transition-colors">
+                        Cookie Policy
+                    </Link>
+                </div>
             </div>
-
-            {/* Newsletter / CTA */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 backdrop-blur-sm">
-              <h3 className="text-white font-semibold mb-2">{t('footer.ctaTitle')}</h3>
-              <p className="text-slate-400 text-xs mb-4">{t('footer.trust')}</p>
-              <div className="space-y-3">
-                 <Link to="/create-campaign" className="block w-full text-center py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium transition-colors">
-                   {t('footer.ctaLaunch')}
-                 </Link>
-                 <Link to="/" className="block w-full text-center py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors">
-                   {t('footer.ctaDonate')}
-                 </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} {t('app.name')}. {t('footer.copyright')}</p>
-            <div className="flex gap-6">
-              <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>
-            </div>
-          </div>
         </div>
       </footer>
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent onPreferencesOpen={() => setIsCookiePreferencesOpen(true)} />
+      
+      {/* Cookie Preferences Modal */}
+      <CookiePreferences 
+        isOpen={isCookiePreferencesOpen} 
+        onClose={() => setIsCookiePreferencesOpen(false)} 
+      />
     </div>
   );
 };
