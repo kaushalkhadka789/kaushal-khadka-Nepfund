@@ -8,6 +8,7 @@ import DonateModal from '../components/DonateModal';
 import { ensureSocketConnected } from '../services/socket';
 import TierBadge from '../components/TierBadge';
 import { getTier } from '../utils/reward.utils.js';
+import { shareToWhatsApp, copyCampaignLink } from '../utils/whatsappShare';
 
 const CampaignDetails = () => {
   const { id } = useParams();
@@ -166,9 +167,32 @@ const CampaignDetails = () => {
 
             {/* Campaign Header & Info */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-6">
-                {campaign.title}
-              </h1>
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight flex-1">
+                  {campaign.title}
+                </h1>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const userId = user?.id || user?._id;
+                    shareToWhatsApp({
+                      campaignId: campaign._id,
+                      campaignTitle: campaign.title,
+                      userId: userId || null,
+                      raisedAmount: campaign.raisedAmount,
+                      goalAmount: campaign.goalAmount,
+                      donorCount: donorsCount,
+                      isUrgent: campaign.isUrgent,
+                      category: campaign.category
+                    });
+                    toast.success('Opening WhatsApp...');
+                  }}
+                  className="flex-shrink-0 p-3 bg-green-50 hover:bg-green-100 text-green-600 rounded-xl transition-all duration-200 hover:scale-110 shadow-sm border border-green-200"
+                  title="Share on WhatsApp"
+                >
+                  <FiShare2 className="w-5 h-5" />
+                </button>
+              </div>
 
               <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-6">
                 <div className="flex items-center space-x-4">
@@ -513,8 +537,25 @@ const CampaignDetails = () => {
                           <FiHeart className="group-hover:scale-110 transition-transform" />
                           {isAuthenticated ? 'Donate Now' : 'Login to Donate'}
                         </button>
-                        <button className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-50 transition font-semibold flex items-center justify-center gap-2">
-                          <FiShare2 /> Share Campaign
+                        <button 
+                          onClick={() => {
+                            const userId = user?.id || user?._id;
+                            shareToWhatsApp({
+                              campaignId: campaign._id,
+                              campaignTitle: campaign.title,
+                              userId: userId || null,
+                              raisedAmount: campaign.raisedAmount,
+                              goalAmount: campaign.goalAmount,
+                              donorCount: donorsCount,
+                              isUrgent: campaign.isUrgent,
+                              category: campaign.category
+                            });
+                            toast.success('Opening WhatsApp...');
+                          }}
+                          className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-50 transition font-semibold flex items-center justify-center gap-2 group"
+                        >
+                          <FiShare2 className="group-hover:scale-110 transition-transform" /> 
+                          Share on WhatsApp
                         </button>
                       </>
                     )}
