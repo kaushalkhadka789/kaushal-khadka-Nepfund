@@ -507,7 +507,21 @@ const AdminDashboard = () => {
     setImagePreviews(campaign.storyDetails?.images || []);
     setCurrentImageIndex(0);
     setIsStoryModalOpen(true);
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
   };
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isStoryModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isStoryModalOpen]);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
@@ -542,6 +556,7 @@ const AdminDashboard = () => {
       await markSuccessStory({ id: storyForm.campaign._id, formData }).unwrap();
       toast.success('Success story saved!');
       setIsStoryModalOpen(false);
+      document.body.style.overflow = 'unset';
       setStoryForm({ campaign: null, message: '', videoUrl: '', images: [] });
     } catch (err) { toast.error(err?.data?.message || 'Failed to save success story'); }
   };
@@ -1754,26 +1769,34 @@ const AdminDashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            onClick={() => !isSavingStory && setIsStoryModalOpen(false)}
+            className="fixed inset-0 bg-gray-900/70 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+            onClick={() => {
+              if (!isSavingStory) {
+                setIsStoryModalOpen(false);
+                document.body.style.overflow = 'unset';
+              }
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col relative z-[101]"
             >
               {/* Header */}
-              <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+              <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-gray-900">
                     {storyForm.campaign.isSuccessStory ? 'Edit Success Story' : 'Create Success Story'}
                   </h3>
-                  <p className="text-sm text-gray-500 truncate max-w-md mt-1">{storyForm.campaign.title}</p>
+                  <p className="text-xs text-gray-500 truncate mt-1">{storyForm.campaign.title}</p>
                 </div>
                 <button
-                  onClick={() => setIsStoryModalOpen(false)}
+                  onClick={() => {
+                    setIsStoryModalOpen(false);
+                    document.body.style.overflow = 'unset';
+                  }}
                   disabled={isSavingStory}
                   className="p-2 hover:bg-gray-200 rounded-xl transition text-gray-500 disabled:opacity-50"
                 >
@@ -1782,11 +1805,11 @@ const AdminDashboard = () => {
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="p-5 space-y-4 overflow-y-auto flex-1 scrollbar-hide" style={{ maxHeight: 'calc(85vh - 160px)' }}>
                 {/* Image Carousel */}
                 {imagePreviews.length > 0 && (
                   <div className="relative">
-                    <div className="relative h-64 bg-gray-100 rounded-xl overflow-hidden">
+                    <div className="relative h-48 bg-gray-100 rounded-lg overflow-hidden">
                       <img
                         src={imagePreviews[currentImageIndex]}
                         alt={`Preview ${currentImageIndex + 1}`}
@@ -1820,13 +1843,13 @@ const AdminDashboard = () => {
                         </>
                       )}
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {imagePreviews.map((preview, i) => (
                         <div key={i} className="relative group">
                           <img
                             src={preview}
                             alt={`Thumbnail ${i + 1}`}
-                            className="w-20 h-20 object-cover rounded-lg border-2 border-transparent group-hover:border-primary-500 cursor-pointer transition"
+                            className="w-16 h-16 object-cover rounded-lg border-2 border-transparent group-hover:border-primary-500 cursor-pointer transition"
                             onClick={() => setCurrentImageIndex(i)}
                           />
                           <button
@@ -1843,38 +1866,38 @@ const AdminDashboard = () => {
 
                 {/* Impact Message */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Impact Message</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Impact Message</label>
                   <textarea
                     value={storyForm.message}
                     onChange={(e) => setStoryForm((prev) => ({ ...prev, message: e.target.value }))}
                     placeholder="Share the impact of this campaign... How did it help? What changed?"
-                    rows={5}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm resize-none"
+                    rows={4}
+                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm resize-none"
                   />
                 </div>
 
                 {/* Video Link */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video Link</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Video Link</label>
                   <div className="relative">
-                    <FiVideo className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiVideo className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="url"
                       value={storyForm.videoUrl}
                       onChange={(e) => setStoryForm((prev) => ({ ...prev, videoUrl: e.target.value }))}
                       placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
-                      className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                      className="w-full border-2 border-gray-200 rounded-lg pl-10 pr-3 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Upload New Images */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Add More Images</label>
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl px-4 py-8 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition duration-200 group">
-                    <FiUpload className="w-10 h-10 text-primary-500 mb-3 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-semibold text-gray-900">Click to upload images</span>
-                    <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB each</span>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Add More Images</label>
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg px-4 py-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition duration-200 group">
+                    <FiUpload className="w-8 h-8 text-primary-500 mb-2 group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-semibold text-gray-900">Click to upload images</span>
+                    <span className="text-xs text-gray-500 mt-0.5">PNG, JPG up to 5MB each</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1887,11 +1910,14 @@ const AdminDashboard = () => {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
                 <button
-                  onClick={() => setIsStoryModalOpen(false)}
+                  onClick={() => {
+                    setIsStoryModalOpen(false);
+                    document.body.style.overflow = 'unset';
+                  }}
                   disabled={isSavingStory}
-                  className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-200 rounded-xl transition disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1900,7 +1926,7 @@ const AdminDashboard = () => {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleStorySubmit}
                   disabled={isSavingStory}
-                  className="px-6 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-md hover:shadow-lg disabled:opacity-70 transition flex items-center gap-2"
+                  className="px-5 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-md hover:shadow-lg disabled:opacity-70 transition flex items-center gap-2"
                 >
                   {isSavingStory ? (
                     <>
