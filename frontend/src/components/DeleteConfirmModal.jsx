@@ -37,7 +37,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, title, subtitle, isLoa
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={!isLoading ? onClose : undefined}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4"
           >
             {/* Modal */}
             <motion.div
