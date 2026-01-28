@@ -3,6 +3,7 @@ import { useGetSuccessStoriesQuery } from '../services/api';
 import { FiArrowRight } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import WhatsAppShareButton from './WhatsAppShareButton';
 
 const buildAssetUrl = (url) => {
   if (!url) return '';
@@ -124,13 +125,25 @@ const SuccessStories = () => {
                           goal: story.goalAmount?.toLocaleString() || '0',
                         })}
                       </p>
-                      <Link
-                        to={`/success-story/${story._id}`}
-                        className="mt-4 inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
-                      >
-                        {t('successStories.readMore')}
-                        <FiArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="mt-4 flex items-center gap-3">
+                        <Link
+                          to={`/success-story/${story._id}`}
+                          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          {t('successStories.readMore')}
+                          <FiArrowRight className="w-4 h-4" />
+                        </Link>
+                        <WhatsAppShareButton
+                          campaignId={story._id}
+                          campaignTitle={story.title}
+                          variant="icon"
+                          size="sm"
+                          raisedAmount={story.raisedAmount}
+                          goalAmount={story.goalAmount}
+                          donorCount={story.donorCount}
+                          category={story.category}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.article>
