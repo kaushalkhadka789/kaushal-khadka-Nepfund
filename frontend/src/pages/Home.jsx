@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux'; // this is used to access the user's state from the redux store
 import { useGetCampaignsQuery, useGetPublicStatsQuery } from '../services/api';
 import { 
   FiSearch, FiZap, FiChevronLeft, FiChevronRight, FiArrowRight, 
@@ -91,6 +92,7 @@ const AnimatedCounter = ({ value, duration = 2 }) => {
 
 const Home = () => {
   const { t } = useTranslation();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
@@ -482,13 +484,16 @@ const Home = () => {
         <HowItWorks />
       </div>
 
-      <div className="bg-gray-50 py-10">
-      <SuccessStories />
-              </div>
+      {/* Success Stories - Only visible to authenticated users */}
+      {isAuthenticated && (
+        <div className="bg-gray-50 py-10">
+          <SuccessStories />
+        </div>
+      )}
 
       <div className="bg-white">
         <FAQ />
-            </div>
+      </div>
 
       {/* --- FOOTER CTA --- */}
       <section className="py-20 bg-gray-900 text-white relative overflow-hidden">
