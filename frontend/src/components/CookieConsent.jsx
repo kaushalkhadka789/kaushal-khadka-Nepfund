@@ -85,47 +85,46 @@ const CookieConsent = ({ onPreferencesOpen }) => {
             onClick={handleRejectNonEssential}
           />
           
-          {/* Cookie Banner */}
+          {/* Cookie Banner - Compact Version */}
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] p-4 sm:p-6"
+            className="fixed bottom-0 left-0 right-0 z-[101] p-3 sm:p-4"
           >
-            <div className="max-w-6xl mx-auto">
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-                <div className="p-6 sm:p-8 lg:p-10">
-                  <div className="flex flex-col lg:flex-row gap-6 lg:items-center">
+            <div className="max-w-5xl mx-auto">
+              <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                     {/* Icon & Content */}
                     <div className="flex-1">
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="flex-shrink-0 p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl">
-                          <FiShield className="w-6 h-6 text-white" />
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+                          <FiShield className="w-4 h-4 text-white" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">
                             We Value Your Privacy
                           </h3>
-                          <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
-                            We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
-                            By clicking "Accept All", you consent to our use of cookies. You can also customize your preferences or reject non-essential cookies.
+                          <p className="text-xs sm:text-sm text-gray-600 leading-snug mb-2">
+                            We use cookies to enhance your experience. By clicking "Accept All", you consent to our use of cookies.
                           </p>
-                          <div className="flex flex-wrap gap-3 text-sm">
+                          <div className="flex flex-wrap gap-2 text-xs">
                             <Link
                               to="/cookie-policy"
-                              className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-semibold transition-colors"
+                              className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-medium transition-colors"
                             >
                               Cookie Policy
-                              <FiChevronRight className="w-4 h-4" />
+                              <FiChevronRight className="w-3 h-3" />
                             </Link>
                             <span className="text-gray-300">•</span>
                             <button
                               onClick={handleCustomize}
-                              className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-semibold transition-colors"
+                              className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-medium transition-colors"
                             >
-                              <FiSettings className="w-4 h-4" />
-                              Manage Preferences
+                              <FiSettings className="w-3 h-3" />
+                              Preferences
                             </button>
                           </div>
                         </div>
@@ -133,23 +132,23 @@ const CookieConsent = ({ onPreferencesOpen }) => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                    <div className="flex flex-row gap-2 sm:flex-shrink-0">
                       <button
                         onClick={handleRejectNonEssential}
-                        className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all duration-300 hover:scale-105"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200"
                       >
-                        Reject Non-Essential
+                        Reject
                       </button>
                       <button
                         onClick={handleCustomize}
-                        className="px-6 py-3 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-xl font-bold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1"
                       >
-                        <FiSettings className="w-5 h-5" />
-                        Customize
+                        <FiSettings className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Customize</span>
                       </button>
                       <button
                         onClick={handleAcceptAll}
-                        className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-bold transition-all duration-300 hover:scale-105 shadow-lg shadow-amber-500/30"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md shadow-amber-500/20"
                       >
                         Accept All
                       </button>
