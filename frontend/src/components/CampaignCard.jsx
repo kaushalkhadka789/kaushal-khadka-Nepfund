@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Heart, ArrowRight } from 'lucide-react';
+import { FiShare2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import { shareToWhatsApp } from '../utils/whatsappShare';
+import toast from 'react-hot-toast';
 
 const CampaignCard = ({ campaign, variant = 'grid', showDonateButton = false }) => {
   const progress = (campaign.raisedAmount / campaign.goalAmount) * 100;
@@ -44,6 +47,26 @@ const CampaignCard = ({ campaign, variant = 'grid', showDonateButton = false }) 
                 {campaign.category}
               </span>
             </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                shareToWhatsApp({
+                  campaignId: campaign._id,
+                  campaignTitle: campaign.title,
+                  raisedAmount: campaign.raisedAmount,
+                  goalAmount: campaign.goalAmount,
+                  donorCount: campaign.donorCount,
+                  isUrgent: campaign.isUrgent,
+                  category: campaign.category
+                });
+                toast.success('Opening WhatsApp...');
+              }}
+              className="absolute top-2 right-2 p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md transition-all duration-200 hover:scale-110 shadow-md z-10"
+              title="Share on WhatsApp"
+            >
+              <FiShare2 className="w-3 h-3" />
+            </button>
           </div>
 
           {/* Content */}
@@ -140,7 +163,28 @@ const CampaignCard = ({ campaign, variant = 'grid', showDonateButton = false }) 
             </span>
           </div>
 
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex gap-1">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const progress = (campaign.raisedAmount / campaign.goalAmount) * 100;
+                shareToWhatsApp({
+                  campaignId: campaign._id,
+                  campaignTitle: campaign.title,
+                  raisedAmount: campaign.raisedAmount,
+                  goalAmount: campaign.goalAmount,
+                  donorCount: campaign.donorCount,
+                  isUrgent: campaign.isUrgent,
+                  category: campaign.category
+                });
+                toast.success('Opening WhatsApp...');
+              }}
+              className="p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md transition-all duration-200 hover:scale-110 shadow-md z-10"
+              title="Share on WhatsApp"
+            >
+              <FiShare2 className="w-3 h-3" />
+            </button>
             <span
               className={`px-2 py-0.5 text-[8px] font-bold text-white ${
                 isEnded ? 'bg-gray-700' : 'bg-green-500'
