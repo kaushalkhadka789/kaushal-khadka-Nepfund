@@ -79,7 +79,7 @@ const CampaignDetails = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 border-t-2 border-primary-100"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-100 border-t-primary-600"></div>
           <p className="text-gray-500 animate-pulse">Loading campaign details...</p>
         </div>
       </div>
